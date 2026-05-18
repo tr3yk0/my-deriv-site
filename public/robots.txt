@@ -1,0 +1,25 @@
+User-agent: *
+# Sitemap for structured discovery
+Sitemap: https://derivinsider.site/sitemap.xml
+
+# Block sensitive or non-public areas
+Disallow: /admin/
+Disallow: /private/
+Disallow: /api/
+Disallow: /cgi-bin/
+Disallow: /tmp/
+Disallow: /backup/
+
+# Explicitly allow important sections
+Allow: /dashboard
+Allow: /bot-builder
+Allow: /copy-trading
+Allow: /free-bots
+Allow: /tutorials
+Allow: /blog
+Allow: /resources
+
+# Prevent duplicate/tracking URLs
+Disallow: /*?sessionid=
+Disallow: /*?ref=
+Disallow: /*?utm_
