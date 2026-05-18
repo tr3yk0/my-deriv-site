@@ -1,0 +1,1236 @@
+<?xml version="1.0" ?>
+<xml xmlns="https://developers.google.com/blockly/xml" is_dbot="true" collection="false">
+  <variables>
+    <variable id="V0001">base_stake</variable>
+    <variable id="V0002">current_stake</variable>
+    <variable id="V0003">recovery_mode</variable>
+    <variable id="V0004">prediction</variable>
+    <variable id="V0005">total_profit</variable>
+    <variable id="V0006">target_profit</variable>
+    <variable id="V0007">stop_loss</variable>
+    <variable id="V0008">tick_counter</variable>
+    <variable id="V0009">low_digit_count</variable>
+    <variable id="V0010">high_digit_count</variable>
+    <variable id="V0011">confidence_score</variable>
+    <variable id="V0012">consecutive_loss</variable>
+    <variable id="V0013">max_consecutive_loss</variable>
+    <variable id="V0014">win_count</variable>
+    <variable id="V0015">trade_count</variable>
+    <variable id="V0016">prev_tick</variable>
+    <variable id="V0017">tick_up_count</variable>
+    <variable id="V0018">tick_down_count</variable>
+    <variable id="V0019">momentum_score</variable>
+    <variable id="V0020">analysis_window</variable>
+    <variable id="V0021">recovery_multiplier</variable>
+    <variable id="V0022">max_stake</variable>
+    <variable id="V0023">profit_this_trade</variable>
+    <variable id="V0024">trade_again_flag</variable>
+    <variable id="V0025">win_rate</variable>
+  </variables>
+  <block type="trade_definition" id="QOU00001" deletable="false" x="0" y="60">
+    <statement name="TRADE_OPTIONS">
+      <block type="trade_definition_market" id="QOU00002" deletable="false" movable="false">
+        <field name="MARKET_LIST">synthetic_index</field>
+        <field name="SUBMARKET_LIST">random_index</field>
+        <field name="SYMBOL_LIST">R_100</field>
+        <next>
+          <block type="trade_definition_tradetype" id="QOU00003" deletable="false" movable="false">
+            <field name="TRADETYPECAT_LIST">digits</field>
+            <field name="TRADETYPE_LIST">overunder</field>
+            <next>
+              <block type="trade_definition_contracttype" id="QOU00004" deletable="false" movable="false">
+                <field name="TYPE_LIST">both</field>
+                <next>
+                  <block type="trade_definition_candleinterval" id="QOU00005" deletable="false" movable="false">
+                    <field name="CANDLEINTERVAL_LIST">60</field>
+                    <next>
+                      <block type="trade_definition_restartbuysell" id="QOU00006" deletable="false" movable="false">
+                        <field name="TIME_MACHINE_ENABLED">FALSE</field>
+                        <next>
+                          <block type="trade_definition_restartonerror" id="QOU00007" deletable="false" movable="false">
+                            <field name="RESTARTONERROR">TRUE</field>
+                          </block>
+                        </next>
+                      </block>
+                    </next>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </next>
+      </block>
+    </statement>
+    <statement name="INITIALIZATION">
+      <block type="variables_set" id="QOU00009">
+        <field name="VAR" id="V0001">base_stake</field>
+        <value name="VALUE">
+          <block type="math_number" id="QOU00008">
+            <field name="NUM">0.35</field>
+          </block>
+        </value>
+        <next>
+          <block type="variables_set" id="QOU00011">
+            <field name="VAR" id="V0002">current_stake</field>
+            <value name="VALUE">
+              <block type="math_number" id="QOU00010">
+                <field name="NUM">0.35</field>
+              </block>
+            </value>
+            <next>
+              <block type="variables_set" id="QOU00013">
+                <field name="VAR" id="V0003">recovery_mode</field>
+                <value name="VALUE">
+                  <block type="logic_boolean" id="QOU00012">
+                    <field name="BOOL">FALSE</field>
+                  </block>
+                </value>
+                <next>
+                  <block type="variables_set" id="QOU00015">
+                    <field name="VAR" id="V0004">prediction</field>
+                    <value name="VALUE">
+                      <block type="math_number" id="QOU00014">
+                        <field name="NUM">2</field>
+                      </block>
+                    </value>
+                    <next>
+                      <block type="variables_set" id="QOU00017">
+                        <field name="VAR" id="V0005">total_profit</field>
+                        <value name="VALUE">
+                          <block type="math_number" id="QOU00016">
+                            <field name="NUM">0</field>
+                          </block>
+                        </value>
+                        <next>
+                          <block type="variables_set" id="QOU00019">
+                            <field name="VAR" id="V0006">target_profit</field>
+                            <value name="VALUE">
+                              <block type="math_number" id="QOU00018">
+                                <field name="NUM">10</field>
+                              </block>
+                            </value>
+                            <next>
+                              <block type="variables_set" id="QOU00021">
+                                <field name="VAR" id="V0007">stop_loss</field>
+                                <value name="VALUE">
+                                  <block type="math_number" id="QOU00020">
+                                    <field name="NUM">5</field>
+                                  </block>
+                                </value>
+                                <next>
+                                  <block type="variables_set" id="QOU00023">
+                                    <field name="VAR" id="V0008">tick_counter</field>
+                                    <value name="VALUE">
+                                      <block type="math_number" id="QOU00022">
+                                        <field name="NUM">0</field>
+                                      </block>
+                                    </value>
+                                    <next>
+                                      <block type="variables_set" id="QOU00025">
+                                        <field name="VAR" id="V0009">low_digit_count</field>
+                                        <value name="VALUE">
+                                          <block type="math_number" id="QOU00024">
+                                            <field name="NUM">0</field>
+                                          </block>
+                                        </value>
+                                        <next>
+                                          <block type="variables_set" id="QOU00027">
+                                            <field name="VAR" id="V0010">high_digit_count</field>
+                                            <value name="VALUE">
+                                              <block type="math_number" id="QOU00026">
+                                                <field name="NUM">0</field>
+                                              </block>
+                                            </value>
+                                            <next>
+                                              <block type="variables_set" id="QOU00029">
+                                                <field name="VAR" id="V0011">confidence_score</field>
+                                                <value name="VALUE">
+                                                  <block type="math_number" id="QOU00028">
+                                                    <field name="NUM">70</field>
+                                                  </block>
+                                                </value>
+                                                <next>
+                                                  <block type="variables_set" id="QOU00031">
+                                                    <field name="VAR" id="V0012">consecutive_loss</field>
+                                                    <value name="VALUE">
+                                                      <block type="math_number" id="QOU00030">
+                                                        <field name="NUM">0</field>
+                                                      </block>
+                                                    </value>
+                                                    <next>
+                                                      <block type="variables_set" id="QOU00033">
+                                                        <field name="VAR" id="V0013">max_consecutive_loss</field>
+                                                        <value name="VALUE">
+                                                          <block type="math_number" id="QOU00032">
+                                                            <field name="NUM">5</field>
+                                                          </block>
+                                                        </value>
+                                                        <next>
+                                                          <block type="variables_set" id="QOU00035">
+                                                            <field name="VAR" id="V0014">win_count</field>
+                                                            <value name="VALUE">
+                                                              <block type="math_number" id="QOU00034">
+                                                                <field name="NUM">0</field>
+                                                              </block>
+                                                            </value>
+                                                            <next>
+                                                              <block type="variables_set" id="QOU00037">
+                                                                <field name="VAR" id="V0015">trade_count</field>
+                                                                <value name="VALUE">
+                                                                  <block type="math_number" id="QOU00036">
+                                                                    <field name="NUM">0</field>
+                                                                  </block>
+                                                                </value>
+                                                                <next>
+                                                                  <block type="variables_set" id="QOU00039">
+                                                                    <field name="VAR" id="V0016">prev_tick</field>
+                                                                    <value name="VALUE">
+                                                                      <block type="math_number" id="QOU00038">
+                                                                        <field name="NUM">0</field>
+                                                                      </block>
+                                                                    </value>
+                                                                    <next>
+                                                                      <block type="variables_set" id="QOU00041">
+                                                                        <field name="VAR" id="V0017">tick_up_count</field>
+                                                                        <value name="VALUE">
+                                                                          <block type="math_number" id="QOU00040">
+                                                                            <field name="NUM">0</field>
+                                                                          </block>
+                                                                        </value>
+                                                                        <next>
+                                                                          <block type="variables_set" id="QOU00043">
+                                                                            <field name="VAR" id="V0018">tick_down_count</field>
+                                                                            <value name="VALUE">
+                                                                              <block type="math_number" id="QOU00042">
+                                                                                <field name="NUM">0</field>
+                                                                              </block>
+                                                                            </value>
+                                                                            <next>
+                                                                              <block type="variables_set" id="QOU00045">
+                                                                                <field name="VAR" id="V0019">momentum_score</field>
+                                                                                <value name="VALUE">
+                                                                                  <block type="math_number" id="QOU00044">
+                                                                                    <field name="NUM">50</field>
+                                                                                  </block>
+                                                                                </value>
+                                                                                <next>
+                                                                                  <block type="variables_set" id="QOU00047">
+                                                                                    <field name="VAR" id="V0020">analysis_window</field>
+                                                                                    <value name="VALUE">
+                                                                                      <block type="math_number" id="QOU00046">
+                                                                                        <field name="NUM">20</field>
+                                                                                      </block>
+                                                                                    </value>
+                                                                                    <next>
+                                                                                      <block type="variables_set" id="QOU00049">
+                                                                                        <field name="VAR" id="V0021">recovery_multiplier</field>
+                                                                                        <value name="VALUE">
+                                                                                          <block type="math_number" id="QOU00048">
+                                                                                            <field name="NUM">2.5</field>
+                                                                                          </block>
+                                                                                        </value>
+                                                                                        <next>
+                                                                                          <block type="variables_set" id="QOU00051">
+                                                                                            <field name="VAR" id="V0022">max_stake</field>
+                                                                                            <value name="VALUE">
+                                                                                              <block type="math_number" id="QOU00050">
+                                                                                                <field name="NUM">10</field>
+                                                                                              </block>
+                                                                                            </value>
+                                                                                            <next>
+                                                                                              <block type="variables_set" id="QOU00053">
+                                                                                                <field name="VAR" id="V0023">profit_this_trade</field>
+                                                                                                <value name="VALUE">
+                                                                                                  <block type="math_number" id="QOU00052">
+                                                                                                    <field name="NUM">0</field>
+                                                                                                  </block>
+                                                                                                </value>
+                                                                                                <next>
+                                                                                                  <block type="variables_set" id="QOU00055">
+                                                                                                    <field name="VAR" id="V0024">trade_again_flag</field>
+                                                                                                    <value name="VALUE">
+                                                                                                      <block type="logic_boolean" id="QOU00054">
+                                                                                                        <field name="BOOL">TRUE</field>
+                                                                                                      </block>
+                                                                                                    </value>
+                                                                                                    <next>
+                                                                                                      <block type="variables_set" id="QOU00057">
+                                                                                                        <field name="VAR" id="V0025">win_rate</field>
+                                                                                                        <value name="VALUE">
+                                                                                                          <block type="math_number" id="QOU00056">
+                                                                                                            <field name="NUM">50</field>
+                                                                                                          </block>
+                                                                                                        </value>
+                                                                                                      </block>
+                                                                                                    </next>
+                                                                                                  </block>
+                                                                                                </next>
+                                                                                              </block>
+                                                                                            </next>
+                                                                                          </block>
+                                                                                        </next>
+                                                                                      </block>
+                                                                                    </next>
+                                                                                  </block>
+                                                                                </next>
+                                                                              </block>
+                                                                            </next>
+                                                                          </block>
+                                                                        </next>
+                                                                      </block>
+                                                                    </next>
+                                                                  </block>
+                                                                </next>
+                                                              </block>
+                                                            </next>
+                                                          </block>
+                                                        </next>
+                                                      </block>
+                                                    </next>
+                                                  </block>
+                                                </next>
+                                              </block>
+                                            </next>
+                                          </block>
+                                        </next>
+                                      </block>
+                                    </next>
+                                  </block>
+                                </next>
+                              </block>
+                            </next>
+                          </block>
+                        </next>
+                      </block>
+                    </next>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </next>
+      </block>
+    </statement>
+    <statement name="SUBMARKET">
+      <block type="trade_definition_tradeoptions" id="QOU00058" collapsed="true" >
+        <mutation xmlns="http://www.w3.org/1999/xhtml" has_first_barrier="false" has_second_barrier="false" has_prediction="true"></mutation>
+        <field name="DURATIONTYPE_LIST">t</field>
+        <value name="DURATION">
+          <shadow type="math_number" id="QOU00059">
+            <field name="NUM">1</field>
+          </shadow>
+        </value>
+        <value name="AMOUNT">
+          <shadow type="math_number" id="QOU00060">
+            <field name="NUM">0.35</field>
+          </shadow>
+          <block type="variables_get" id="QOU00061">
+            <field name="VAR" id="V0002">current_stake</field>
+          </block>
+        </value>
+        <value name="PREDICTION">
+          <shadow type="math_number" id="QOU00062">
+            <field name="NUM">2</field>
+          </shadow>
+          <block type="variables_get" id="QOU00063">
+            <field name="VAR" id="V0004">prediction</field>
+          </block>
+        </value>
+      </block>
+    </statement>
+  </block>
+  <block type="during_purchase" id="QOU00064" x="800" y="60">
+    <statement name="DURING_PURCHASE_STACK">
+      <block type="math_change" id="QOU00066">
+        <field name="VAR" id="V0008">tick_counter</field>
+        <value name="DELTA">
+          <shadow type="math_number" id="QOU00067">
+            <field name="NUM">1</field>
+          </shadow>
+          <block type="math_number" id="QOU00065">
+            <field name="NUM">1</field>
+          </block>
+        </value>
+        <next>
+          <block type="controls_if" id="QOU00077">
+            <mutation xmlns="http://www.w3.org/1999/xhtml" else="1"></mutation>
+            <value name="IF0">
+              <block type="logic_compare" id="QOU00070">
+                <field name="OP">LTE</field>
+                <value name="A">
+                  <block type="last_digit" id="QOU00068"/>
+                </value>
+                <value name="B">
+                  <block type="math_number" id="QOU00069">
+                    <field name="NUM">2</field>
+                  </block>
+                </value>
+              </block>
+            </value>
+            <statement name="DO0">
+              <block type="math_change" id="QOU00072">
+                <field name="VAR" id="V0009">low_digit_count</field>
+                <value name="DELTA">
+                  <shadow type="math_number" id="QOU00073">
+                    <field name="NUM">1</field>
+                  </shadow>
+                  <block type="math_number" id="QOU00071">
+                    <field name="NUM">1</field>
+                  </block>
+                </value>
+              </block>
+            </statement>
+            <statement name="ELSE">
+              <block type="math_change" id="QOU00075">
+                <field name="VAR" id="V0010">high_digit_count</field>
+                <value name="DELTA">
+                  <shadow type="math_number" id="QOU00076">
+                    <field name="NUM">1</field>
+                  </shadow>
+                  <block type="math_number" id="QOU00074">
+                    <field name="NUM">1</field>
+                  </block>
+                </value>
+              </block>
+            </statement>
+            <next>
+              <block type="controls_if" id="QOU00093">
+                <value name="IF0">
+                  <block type="logic_compare" id="QOU00080">
+                    <field name="OP">GT</field>
+                    <value name="A">
+                      <block type="variables_get" id="QOU00078">
+                        <field name="VAR" id="V0008">tick_counter</field>
+                      </block>
+                    </value>
+                    <value name="B">
+                      <block type="math_number" id="QOU00079">
+                        <field name="NUM">0</field>
+                      </block>
+                    </value>
+                  </block>
+                </value>
+                <statement name="DO0">
+                  <block type="variables_set" id="QOU00092">
+                    <field name="VAR" id="V0011">confidence_score</field>
+                    <value name="VALUE">
+                      <block type="math_round" id="QOU00090">
+                        <field name="OP">ROUND</field>
+                        <value name="NUM">
+                          <shadow type="math_number" id="QOU00091">
+                            <field name="NUM">3.1</field>
+                          </shadow>
+                          <block type="math_arithmetic" id="QOU00087">
+                            <field name="OP">MULTIPLY</field>
+                            <value name="A">
+                              <shadow type="math_number" id="QOU00088">
+                                <field name="NUM">1</field>
+                              </shadow>
+                              <block type="math_arithmetic" id="QOU00083">
+                                <field name="OP">DIVIDE</field>
+                                <value name="A">
+                                  <shadow type="math_number" id="QOU00084">
+                                    <field name="NUM">1</field>
+                                  </shadow>
+                                  <block type="variables_get" id="QOU00081">
+                                    <field name="VAR" id="V0010">high_digit_count</field>
+                                  </block>
+                                </value>
+                                <value name="B">
+                                  <shadow type="math_number" id="QOU00085">
+                                    <field name="NUM">1</field>
+                                  </shadow>
+                                  <block type="variables_get" id="QOU00082">
+                                    <field name="VAR" id="V0008">tick_counter</field>
+                                  </block>
+                                </value>
+                              </block>
+                            </value>
+                            <value name="B">
+                              <shadow type="math_number" id="QOU00089">
+                                <field name="NUM">1</field>
+                              </shadow>
+                              <block type="math_number" id="QOU00086">
+                                <field name="NUM">100</field>
+                              </block>
+                            </value>
+                          </block>
+                        </value>
+                      </block>
+                    </value>
+                  </block>
+                </statement>
+                <next>
+                  <block type="controls_if" id="QOU00100">
+                    <value name="IF0">
+                      <block type="logic_compare" id="QOU00096">
+                        <field name="OP">GT</field>
+                        <value name="A">
+                          <block type="tick" id="QOU00094"/>
+                        </value>
+                        <value name="B">
+                          <block type="variables_get" id="QOU00095">
+                            <field name="VAR" id="V0016">prev_tick</field>
+                          </block>
+                        </value>
+                      </block>
+                    </value>
+                    <statement name="DO0">
+                      <block type="math_change" id="QOU00098">
+                        <field name="VAR" id="V0017">tick_up_count</field>
+                        <value name="DELTA">
+                          <shadow type="math_number" id="QOU00099">
+                            <field name="NUM">1</field>
+                          </shadow>
+                          <block type="math_number" id="QOU00097">
+                            <field name="NUM">1</field>
+                          </block>
+                        </value>
+                      </block>
+                    </statement>
+                    <next>
+                      <block type="controls_if" id="QOU00107">
+                        <value name="IF0">
+                          <block type="logic_compare" id="QOU00103">
+                            <field name="OP">LT</field>
+                            <value name="A">
+                              <block type="tick" id="QOU00101"/>
+                            </value>
+                            <value name="B">
+                              <block type="variables_get" id="QOU00102">
+                                <field name="VAR" id="V0016">prev_tick</field>
+                              </block>
+                            </value>
+                          </block>
+                        </value>
+                        <statement name="DO0">
+                          <block type="math_change" id="QOU00105">
+                            <field name="VAR" id="V0018">tick_down_count</field>
+                            <value name="DELTA">
+                              <shadow type="math_number" id="QOU00106">
+                                <field name="NUM">1</field>
+                              </shadow>
+                              <block type="math_number" id="QOU00104">
+                                <field name="NUM">1</field>
+                              </block>
+                            </value>
+                          </block>
+                        </statement>
+                        <next>
+                          <block type="variables_set" id="QOU00109">
+                            <field name="VAR" id="V0016">prev_tick</field>
+                            <value name="VALUE">
+                              <block type="tick" id="QOU00108"/>
+                            </value>
+                            <next>
+                              <block type="controls_if" id="QOU00125">
+                                <value name="IF0">
+                                  <block type="logic_compare" id="QOU00112">
+                                    <field name="OP">GT</field>
+                                    <value name="A">
+                                      <block type="variables_get" id="QOU00110">
+                                        <field name="VAR" id="V0008">tick_counter</field>
+                                      </block>
+                                    </value>
+                                    <value name="B">
+                                      <block type="math_number" id="QOU00111">
+                                        <field name="NUM">0</field>
+                                      </block>
+                                    </value>
+                                  </block>
+                                </value>
+                                <statement name="DO0">
+                                  <block type="variables_set" id="QOU00124">
+                                    <field name="VAR" id="V0019">momentum_score</field>
+                                    <value name="VALUE">
+                                      <block type="math_round" id="QOU00122">
+                                        <field name="OP">ROUND</field>
+                                        <value name="NUM">
+                                          <shadow type="math_number" id="QOU00123">
+                                            <field name="NUM">3.1</field>
+                                          </shadow>
+                                          <block type="math_arithmetic" id="QOU00119">
+                                            <field name="OP">MULTIPLY</field>
+                                            <value name="A">
+                                              <shadow type="math_number" id="QOU00120">
+                                                <field name="NUM">1</field>
+                                              </shadow>
+                                              <block type="math_arithmetic" id="QOU00115">
+                                                <field name="OP">DIVIDE</field>
+                                                <value name="A">
+                                                  <shadow type="math_number" id="QOU00116">
+                                                    <field name="NUM">1</field>
+                                                  </shadow>
+                                                  <block type="variables_get" id="QOU00113">
+                                                    <field name="VAR" id="V0017">tick_up_count</field>
+                                                  </block>
+                                                </value>
+                                                <value name="B">
+                                                  <shadow type="math_number" id="QOU00117">
+                                                    <field name="NUM">1</field>
+                                                  </shadow>
+                                                  <block type="variables_get" id="QOU00114">
+                                                    <field name="VAR" id="V0008">tick_counter</field>
+                                                  </block>
+                                                </value>
+                                              </block>
+                                            </value>
+                                            <value name="B">
+                                              <shadow type="math_number" id="QOU00121">
+                                                <field name="NUM">1</field>
+                                              </shadow>
+                                              <block type="math_number" id="QOU00118">
+                                                <field name="NUM">100</field>
+                                              </block>
+                                            </value>
+                                          </block>
+                                        </value>
+                                      </block>
+                                    </value>
+                                  </block>
+                                </statement>
+                                <next>
+                                  <block type="controls_if" id="QOU00141">
+                                    <value name="IF0">
+                                      <block type="logic_compare" id="QOU00128">
+                                        <field name="OP">GT</field>
+                                        <value name="A">
+                                          <block type="variables_get" id="QOU00126">
+                                            <field name="VAR" id="V0015">trade_count</field>
+                                          </block>
+                                        </value>
+                                        <value name="B">
+                                          <block type="math_number" id="QOU00127">
+                                            <field name="NUM">0</field>
+                                          </block>
+                                        </value>
+                                      </block>
+                                    </value>
+                                    <statement name="DO0">
+                                      <block type="variables_set" id="QOU00140">
+                                        <field name="VAR" id="V0025">win_rate</field>
+                                        <value name="VALUE">
+                                          <block type="math_round" id="QOU00138">
+                                            <field name="OP">ROUND</field>
+                                            <value name="NUM">
+                                              <shadow type="math_number" id="QOU00139">
+                                                <field name="NUM">3.1</field>
+                                              </shadow>
+                                              <block type="math_arithmetic" id="QOU00135">
+                                                <field name="OP">MULTIPLY</field>
+                                                <value name="A">
+                                                  <shadow type="math_number" id="QOU00136">
+                                                    <field name="NUM">1</field>
+                                                  </shadow>
+                                                  <block type="math_arithmetic" id="QOU00131">
+                                                    <field name="OP">DIVIDE</field>
+                                                    <value name="A">
+                                                      <shadow type="math_number" id="QOU00132">
+                                                        <field name="NUM">1</field>
+                                                      </shadow>
+                                                      <block type="variables_get" id="QOU00129">
+                                                        <field name="VAR" id="V0014">win_count</field>
+                                                      </block>
+                                                    </value>
+                                                    <value name="B">
+                                                      <shadow type="math_number" id="QOU00133">
+                                                        <field name="NUM">1</field>
+                                                      </shadow>
+                                                      <block type="variables_get" id="QOU00130">
+                                                        <field name="VAR" id="V0015">trade_count</field>
+                                                      </block>
+                                                    </value>
+                                                  </block>
+                                                </value>
+                                                <value name="B">
+                                                  <shadow type="math_number" id="QOU00137">
+                                                    <field name="NUM">1</field>
+                                                  </shadow>
+                                                  <block type="math_number" id="QOU00134">
+                                                    <field name="NUM">100</field>
+                                                  </block>
+                                                </value>
+                                              </block>
+                                            </value>
+                                          </block>
+                                        </value>
+                                      </block>
+                                    </statement>
+                                    <next>
+                                      <block type="controls_if" id="QOU00153">
+                                        <mutation xmlns="http://www.w3.org/1999/xhtml" else="1"></mutation>
+                                        <value name="IF0">
+                                          <block type="variables_get" id="QOU00142">
+                                            <field name="VAR" id="V0003">recovery_mode</field>
+                                          </block>
+                                        </value>
+                                        <statement name="DO0">
+                                          <block type="variables_set" id="QOU00144">
+                                            <field name="VAR" id="V0004">prediction</field>
+                                            <value name="VALUE">
+                                              <block type="math_number" id="QOU00143">
+                                                <field name="NUM">4</field>
+                                              </block>
+                                            </value>
+                                          </block>
+                                        </statement>
+                                        <statement name="ELSE">
+                                          <block type="controls_if" id="QOU00152">
+                                            <mutation xmlns="http://www.w3.org/1999/xhtml" else="1"></mutation>
+                                            <value name="IF0">
+                                              <block type="logic_compare" id="QOU00147">
+                                                <field name="OP">GTE</field>
+                                                <value name="A">
+                                                  <block type="variables_get" id="QOU00145">
+                                                    <field name="VAR" id="V0011">confidence_score</field>
+                                                  </block>
+                                                </value>
+                                                <value name="B">
+                                                  <block type="math_number" id="QOU00146">
+                                                    <field name="NUM">65</field>
+                                                  </block>
+                                                </value>
+                                              </block>
+                                            </value>
+                                            <statement name="DO0">
+                                              <block type="variables_set" id="QOU00149">
+                                                <field name="VAR" id="V0004">prediction</field>
+                                                <value name="VALUE">
+                                                  <block type="math_number" id="QOU00148">
+                                                    <field name="NUM">2</field>
+                                                  </block>
+                                                </value>
+                                              </block>
+                                            </statement>
+                                            <statement name="ELSE">
+                                              <block type="variables_set" id="QOU00151">
+                                                <field name="VAR" id="V0004">prediction</field>
+                                                <value name="VALUE">
+                                                  <block type="math_number" id="QOU00150">
+                                                    <field name="NUM">3</field>
+                                                  </block>
+                                                </value>
+                                              </block>
+                                            </statement>
+                                          </block>
+                                        </statement>
+                                        <next>
+                                          <block type="controls_if" id="QOU00167">
+                                            <value name="IF0">
+                                              <block type="logic_compare" id="QOU00156">
+                                                <field name="OP">GTE</field>
+                                                <value name="A">
+                                                  <block type="variables_get" id="QOU00154">
+                                                    <field name="VAR" id="V0008">tick_counter</field>
+                                                  </block>
+                                                </value>
+                                                <value name="B">
+                                                  <block type="variables_get" id="QOU00155">
+                                                    <field name="VAR" id="V0020">analysis_window</field>
+                                                  </block>
+                                                </value>
+                                              </block>
+                                            </value>
+                                            <statement name="DO0">
+                                              <block type="variables_set" id="QOU00158">
+                                                <field name="VAR" id="V0008">tick_counter</field>
+                                                <value name="VALUE">
+                                                  <block type="math_number" id="QOU00157">
+                                                    <field name="NUM">0</field>
+                                                  </block>
+                                                </value>
+                                                <next>
+                                                  <block type="variables_set" id="QOU00160">
+                                                    <field name="VAR" id="V0009">low_digit_count</field>
+                                                    <value name="VALUE">
+                                                      <block type="math_number" id="QOU00159">
+                                                        <field name="NUM">0</field>
+                                                      </block>
+                                                    </value>
+                                                    <next>
+                                                      <block type="variables_set" id="QOU00162">
+                                                        <field name="VAR" id="V0010">high_digit_count</field>
+                                                        <value name="VALUE">
+                                                          <block type="math_number" id="QOU00161">
+                                                            <field name="NUM">0</field>
+                                                          </block>
+                                                        </value>
+                                                        <next>
+                                                          <block type="variables_set" id="QOU00164">
+                                                            <field name="VAR" id="V0017">tick_up_count</field>
+                                                            <value name="VALUE">
+                                                              <block type="math_number" id="QOU00163">
+                                                                <field name="NUM">0</field>
+                                                              </block>
+                                                            </value>
+                                                            <next>
+                                                              <block type="variables_set" id="QOU00166">
+                                                                <field name="VAR" id="V0018">tick_down_count</field>
+                                                                <value name="VALUE">
+                                                                  <block type="math_number" id="QOU00165">
+                                                                    <field name="NUM">0</field>
+                                                                  </block>
+                                                                </value>
+                                                              </block>
+                                                            </next>
+                                                          </block>
+                                                        </next>
+                                                      </block>
+                                                    </next>
+                                                  </block>
+                                                </next>
+                                              </block>
+                                            </statement>
+                                            <next>
+                                              <block type="controls_if" id="QOU00173">
+                                                <value name="IF0">
+                                                  <block type="logic_compare" id="QOU00170">
+                                                    <field name="OP">GTE</field>
+                                                    <value name="A">
+                                                      <block type="variables_get" id="QOU00168">
+                                                        <field name="VAR" id="V0011">confidence_score</field>
+                                                      </block>
+                                                    </value>
+                                                    <value name="B">
+                                                      <block type="math_number" id="QOU00169">
+                                                        <field name="NUM">75</field>
+                                                      </block>
+                                                    </value>
+                                                  </block>
+                                                </value>
+                                                <statement name="DO0">
+                                                  <block type="notify" id="QOU00171">
+                                                    <field name="NOTIFICATION_TYPE">success</field>
+                                                    <field name="NOTIFICATION_SOUND">silent</field>
+                                                    <value name="MESSAGE">
+                                                      <shadow type="text" id="QOU00172">
+                                                        <field name="TEXT">STRONG SIGNAL | Confidence ≥75% | OVER 2 Favoured</field>
+                                                      </shadow>
+                                                    </value>
+                                                  </block>
+                                                </statement>
+                                              </block>
+                                            </next>
+                                          </block>
+                                        </next>
+                                      </block>
+                                    </next>
+                                  </block>
+                                </next>
+                              </block>
+                            </next>
+                          </block>
+                        </next>
+                      </block>
+                    </next>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </next>
+      </block>
+    </statement>
+  </block>
+  <block type="after_purchase" id="QOU00174" x="1600" y="60">
+    <statement name="AFTERPURCHASE_STACK">
+      <block type="variables_set" id="QOU00176">
+        <field name="VAR" id="V0023">profit_this_trade</field>
+        <value name="VALUE">
+          <block type="read_details" id="QOU00175">
+            <field name="DETAIL_INDEX">4</field>
+          </block>
+        </value>
+        <next>
+          <block type="math_change" id="QOU00178">
+            <field name="VAR" id="V0015">trade_count</field>
+            <value name="DELTA">
+              <shadow type="math_number" id="QOU00179">
+                <field name="NUM">1</field>
+              </shadow>
+              <block type="math_number" id="QOU00177">
+                <field name="NUM">1</field>
+              </block>
+            </value>
+            <next>
+              <block type="variables_set" id="QOU00195">
+                <field name="VAR" id="V0005">total_profit</field>
+                <value name="VALUE">
+                  <block type="math_arithmetic" id="QOU00192">
+                    <field name="OP">DIVIDE</field>
+                    <value name="A">
+                      <shadow type="math_number" id="QOU00193">
+                        <field name="NUM">1</field>
+                      </shadow>
+                      <block type="math_round" id="QOU00189">
+                        <field name="OP">ROUND</field>
+                        <value name="NUM">
+                          <shadow type="math_number" id="QOU00190">
+                            <field name="NUM">3.1</field>
+                          </shadow>
+                          <block type="math_arithmetic" id="QOU00186">
+                            <field name="OP">MULTIPLY</field>
+                            <value name="A">
+                              <shadow type="math_number" id="QOU00187">
+                                <field name="NUM">1</field>
+                              </shadow>
+                              <block type="math_arithmetic" id="QOU00182">
+                                <field name="OP">ADD</field>
+                                <value name="A">
+                                  <shadow type="math_number" id="QOU00183">
+                                    <field name="NUM">1</field>
+                                  </shadow>
+                                  <block type="variables_get" id="QOU00180">
+                                    <field name="VAR" id="V0005">total_profit</field>
+                                  </block>
+                                </value>
+                                <value name="B">
+                                  <shadow type="math_number" id="QOU00184">
+                                    <field name="NUM">1</field>
+                                  </shadow>
+                                  <block type="variables_get" id="QOU00181">
+                                    <field name="VAR" id="V0023">profit_this_trade</field>
+                                  </block>
+                                </value>
+                              </block>
+                            </value>
+                            <value name="B">
+                              <shadow type="math_number" id="QOU00188">
+                                <field name="NUM">1</field>
+                              </shadow>
+                              <block type="math_number" id="QOU00185">
+                                <field name="NUM">100</field>
+                              </block>
+                            </value>
+                          </block>
+                        </value>
+                      </block>
+                    </value>
+                    <value name="B">
+                      <shadow type="math_number" id="QOU00194">
+                        <field name="NUM">1</field>
+                      </shadow>
+                      <block type="math_number" id="QOU00191">
+                        <field name="NUM">100</field>
+                      </block>
+                    </value>
+                  </block>
+                </value>
+                <next>
+                  <block type="controls_if" id="QOU00234">
+                    <mutation xmlns="http://www.w3.org/1999/xhtml" else="1"></mutation>
+                    <value name="IF0">
+                      <block type="contract_check_result" id="QOU00233">
+                        <field name="CHECK_RESULT">win</field>
+                      </block>
+                    </value>
+                    <statement name="DO0">
+                      <block type="math_change" id="QOU00197">
+                        <field name="VAR" id="V0014">win_count</field>
+                        <value name="DELTA">
+                          <shadow type="math_number" id="QOU00198">
+                            <field name="NUM">1</field>
+                          </shadow>
+                          <block type="math_number" id="QOU00196">
+                            <field name="NUM">1</field>
+                          </block>
+                        </value>
+                        <next>
+                          <block type="variables_set" id="QOU00200">
+                            <field name="VAR" id="V0003">recovery_mode</field>
+                            <value name="VALUE">
+                              <block type="logic_boolean" id="QOU00199">
+                                <field name="BOOL">FALSE</field>
+                              </block>
+                            </value>
+                            <next>
+                              <block type="variables_set" id="QOU00202">
+                                <field name="VAR" id="V0012">consecutive_loss</field>
+                                <value name="VALUE">
+                                  <block type="math_number" id="QOU00201">
+                                    <field name="NUM">0</field>
+                                  </block>
+                                </value>
+                                <next>
+                                  <block type="variables_set" id="QOU00204">
+                                    <field name="VAR" id="V0004">prediction</field>
+                                    <value name="VALUE">
+                                      <block type="math_number" id="QOU00203">
+                                        <field name="NUM">2</field>
+                                      </block>
+                                    </value>
+                                    <next>
+                                      <block type="variables_set" id="QOU00206">
+                                        <field name="VAR" id="V0002">current_stake</field>
+                                        <value name="VALUE">
+                                          <block type="variables_get" id="QOU00205">
+                                            <field name="VAR" id="V0001">base_stake</field>
+                                          </block>
+                                        </value>
+                                        <next>
+                                          <block type="notify" id="QOU00207">
+                                            <field name="NOTIFICATION_TYPE">success</field>
+                                            <field name="NOTIFICATION_SOUND">silent</field>
+                                            <value name="MESSAGE">
+                                              <shadow type="text" id="QOU00208">
+                                                <field name="TEXT">WIN ✓ | Recovery OFF | OVER 2 Active | Stake = Base</field>
+                                              </shadow>
+                                            </value>
+                                          </block>
+                                        </next>
+                                      </block>
+                                    </next>
+                                  </block>
+                                </next>
+                              </block>
+                            </next>
+                          </block>
+                        </next>
+                      </block>
+                    </statement>
+                    <statement name="ELSE">
+                      <block type="math_change" id="QOU00224">
+                        <field name="VAR" id="V0012">consecutive_loss</field>
+                        <value name="DELTA">
+                          <shadow type="math_number" id="QOU00225">
+                            <field name="NUM">1</field>
+                          </shadow>
+                          <block type="math_number" id="QOU00223">
+                            <field name="NUM">1</field>
+                          </block>
+                        </value>
+                        <next>
+                          <block type="variables_set" id="QOU00227">
+                            <field name="VAR" id="V0003">recovery_mode</field>
+                            <value name="VALUE">
+                              <block type="logic_boolean" id="QOU00226">
+                                <field name="BOOL">TRUE</field>
+                              </block>
+                            </value>
+                            <next>
+                              <block type="variables_set" id="QOU00229">
+                                <field name="VAR" id="V0004">prediction</field>
+                                <value name="VALUE">
+                                  <block type="math_number" id="QOU00228">
+                                    <field name="NUM">4</field>
+                                  </block>
+                                </value>
+                                <next>
+                                  <block type="variables_set" id="QOU00230">
+                                    <field name="VAR" id="V0002">current_stake</field>
+                                    <value name="VALUE">
+                                      <block type="logic_ternary" id="QOU00222">
+                                        <value name="IF">
+                                          <block type="logic_compare" id="QOU00215">
+                                            <field name="OP">GT</field>
+                                            <value name="A">
+                                              <block type="math_arithmetic" id="QOU00211">
+                                                <field name="OP">MULTIPLY</field>
+                                                <value name="A">
+                                                  <shadow type="math_number" id="QOU00212">
+                                                    <field name="NUM">1</field>
+                                                  </shadow>
+                                                  <block type="variables_get" id="QOU00209">
+                                                    <field name="VAR" id="V0002">current_stake</field>
+                                                  </block>
+                                                </value>
+                                                <value name="B">
+                                                  <shadow type="math_number" id="QOU00213">
+                                                    <field name="NUM">1</field>
+                                                  </shadow>
+                                                  <block type="variables_get" id="QOU00210">
+                                                    <field name="VAR" id="V0021">recovery_multiplier</field>
+                                                  </block>
+                                                </value>
+                                              </block>
+                                            </value>
+                                            <value name="B">
+                                              <block type="variables_get" id="QOU00214">
+                                                <field name="VAR" id="V0022">max_stake</field>
+                                              </block>
+                                            </value>
+                                          </block>
+                                        </value>
+                                        <value name="THEN">
+                                          <block type="variables_get" id="QOU00216">
+                                            <field name="VAR" id="V0022">max_stake</field>
+                                          </block>
+                                        </value>
+                                        <value name="ELSE">
+                                          <block type="math_arithmetic" id="QOU00219">
+                                            <field name="OP">MULTIPLY</field>
+                                            <value name="A">
+                                              <shadow type="math_number" id="QOU00220">
+                                                <field name="NUM">1</field>
+                                              </shadow>
+                                              <block type="variables_get" id="QOU00217">
+                                                <field name="VAR" id="V0002">current_stake</field>
+                                              </block>
+                                            </value>
+                                            <value name="B">
+                                              <shadow type="math_number" id="QOU00221">
+                                                <field name="NUM">1</field>
+                                              </shadow>
+                                              <block type="variables_get" id="QOU00218">
+                                                <field name="VAR" id="V0021">recovery_multiplier</field>
+                                              </block>
+                                            </value>
+                                          </block>
+                                        </value>
+                                      </block>
+                                    </value>
+                                    <next>
+                                      <block type="notify" id="QOU00231">
+                                        <field name="NOTIFICATION_TYPE">warn</field>
+                                        <field name="NOTIFICATION_SOUND">silent</field>
+                                        <value name="MESSAGE">
+                                          <shadow type="text" id="QOU00232">
+                                            <field name="TEXT">LOSS ✗ | Recovery ON | Switching OVER 4 | Stake Scaled</field>
+                                          </shadow>
+                                        </value>
+                                      </block>
+                                    </next>
+                                  </block>
+                                </next>
+                              </block>
+                            </next>
+                          </block>
+                        </next>
+                      </block>
+                    </statement>
+                    <next>
+                      <block type="controls_if" id="QOU00238">
+                        <value name="IF0">
+                          <block type="variables_get" id="QOU00235">
+                            <field name="VAR" id="V0003">recovery_mode</field>
+                          </block>
+                        </value>
+                        <statement name="DO0">
+                          <block type="notify" id="QOU00236">
+                            <field name="NOTIFICATION_TYPE">warn</field>
+                            <field name="NOTIFICATION_SOUND">silent</field>
+                            <value name="MESSAGE">
+                              <shadow type="text" id="QOU00237">
+                                <field name="TEXT">RECOVERY ACTIVE | DIGITOVER 4 | Consecutive Losses Running</field>
+                              </shadow>
+                            </value>
+                          </block>
+                        </statement>
+                        <next>
+                          <block type="controls_if" id="QOU00259">
+                            <mutation xmlns="http://www.w3.org/1999/xhtml" else="1"></mutation>
+                            <value name="IF0">
+                              <block type="logic_operation" id="QOU00253">
+                                <field name="OP">AND</field>
+                                <value name="A">
+                                  <block type="logic_operation" id="QOU00249">
+                                    <field name="OP">AND</field>
+                                    <value name="A">
+                                      <block type="logic_compare" id="QOU00241">
+                                        <field name="OP">LT</field>
+                                        <value name="A">
+                                          <block type="variables_get" id="QOU00239">
+                                            <field name="VAR" id="V0005">total_profit</field>
+                                          </block>
+                                        </value>
+                                        <value name="B">
+                                          <block type="variables_get" id="QOU00240">
+                                            <field name="VAR" id="V0006">target_profit</field>
+                                          </block>
+                                        </value>
+                                      </block>
+                                    </value>
+                                    <value name="B">
+                                      <block type="logic_compare" id="QOU00248">
+                                        <field name="OP">GT</field>
+                                        <value name="A">
+                                          <block type="math_arithmetic" id="QOU00244">
+                                            <field name="OP">ADD</field>
+                                            <value name="A">
+                                              <shadow type="math_number" id="QOU00245">
+                                                <field name="NUM">1</field>
+                                              </shadow>
+                                              <block type="variables_get" id="QOU00242">
+                                                <field name="VAR" id="V0005">total_profit</field>
+                                              </block>
+                                            </value>
+                                            <value name="B">
+                                              <shadow type="math_number" id="QOU00246">
+                                                <field name="NUM">1</field>
+                                              </shadow>
+                                              <block type="variables_get" id="QOU00243">
+                                                <field name="VAR" id="V0007">stop_loss</field>
+                                              </block>
+                                            </value>
+                                          </block>
+                                        </value>
+                                        <value name="B">
+                                          <block type="math_number" id="QOU00247">
+                                            <field name="NUM">0</field>
+                                          </block>
+                                        </value>
+                                      </block>
+                                    </value>
+                                  </block>
+                                </value>
+                                <value name="B">
+                                  <block type="logic_compare" id="QOU00252">
+                                    <field name="OP">LT</field>
+                                    <value name="A">
+                                      <block type="variables_get" id="QOU00250">
+                                        <field name="VAR" id="V0012">consecutive_loss</field>
+                                      </block>
+                                    </value>
+                                    <value name="B">
+                                      <block type="variables_get" id="QOU00251">
+                                        <field name="VAR" id="V0013">max_consecutive_loss</field>
+                                      </block>
+                                    </value>
+                                  </block>
+                                </value>
+                              </block>
+                            </value>
+                            <statement name="DO0">
+                              <block type="trade_again" id="QOU00254"/>
+                            </statement>
+                            <statement name="ELSE">
+                              <block type="notify" id="QOU00255">
+                                <field name="NOTIFICATION_TYPE">error</field>
+                                <field name="NOTIFICATION_SOUND">silent</field>
+                                <value name="MESSAGE">
+                                  <shadow type="text" id="QOU00256">
+                                    <field name="TEXT">BOT HALTED | Profit Target / Stop Loss / Max Consec-Loss Reached</field>
+                                  </shadow>
+                                </value>
+                                <next>
+                                  <block type="text_print" id="QOU00257" collapsed="true">
+                                    <value name="TEXT">
+                                      <shadow type="text" id="QOU00258">
+                                        <field name="TEXT">QUANTUM OVER/UNDER BOT STOPPED</field>
+                                      </shadow>
+                                    </value>
+                                  </block>
+                                </next>
+                              </block>
+                            </statement>
+                          </block>
+                        </next>
+                      </block>
+                    </next>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </next>
+      </block>
+    </statement>
+  </block>
+  <block type="before_purchase" id="QOU00260" deletable="false" x="0" y="932">
+    <statement name="BEFOREPURCHASE_STACK">
+      <block type="purchase" id="QOU00261">
+        <field name="PURCHASE_LIST">DIGITOVER</field>
+      </block>
+    </statement>
+  </block>
+</xml>

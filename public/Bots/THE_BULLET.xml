@@ -1,0 +1,358 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<data><![CDATA[
+{
+  "botName": "THE_BULLET",
+  "description": "Superior Trading Bot With Advanced System Strategies, Trade speed = every tick \n- THIS ROBOT TRADES UNDER 4 WITH OVER 4 RECOVERY",
+  "youtube": "",
+  "createdDate": 1773922849978,
+  "updatedDate": 1774774061691,
+  "riskManagement": {
+    "isShared": true,
+    "isRiskManagerInjection": false,
+    "baseStake": 8,
+    "selected": {
+      "name": "martingaleFn",
+      "isActive": true,
+      "stakeArr": [
+        10
+      ],
+      "multiplier": 2,
+      "activeOnLose": true,
+      "activateLimit": 1,
+      "deactivateLimit": 100
+    }
+  },
+  "executionTime": {
+    "isShared": true,
+    "duration": 1,
+    "duration_unit": "t"
+  },
+  "strategy": {
+    "isActive": false,
+    "isShared": true,
+    "selected": []
+  },
+  "volatilities": {
+    "isShared": true,
+    "symbols": [
+      "1HZ10V"
+    ],
+    "switch": {
+      "isActive": false,
+      "condition": "runs",
+      "count": 2
+    }
+  },
+  "pauseTrading": {
+    "isShared": true,
+    "pause": {
+      "isActive": false,
+      "condition": "runs",
+      "count": 3,
+      "ticksToPause": 5
+    }
+  },
+  "virtualHook": {
+    "isShared": true,
+    "switch": {
+      "isActive": false,
+      "condition": "loses",
+      "count": 3,
+      "liveCount": 8,
+      "isRealUntilRecovery": true
+    }
+  },
+  "sequenceAfterSignal": {
+    "isShared": true,
+    "selected": {
+      "isActive": false,
+      "name": "InstantRecovery",
+      "limit": 1
+    }
+  },
+  "stopCondition": {
+    "isShared": true,
+    "isActive": true,
+    "condition": "ConsecutiveLosses",
+    "limit": 4
+  },
+  "tpsl": {
+    "isShared": true,
+    "isActive": true,
+    "tp": 50,
+    "sl": 200
+  },
+  "marketSwitch": {
+    "isActive": true,
+    "isOverRide": true,
+    "isHedgeReset": false,
+    "isContinuous": true,
+    "switch": {
+      "condition": "recovery",
+      "limit": 1,
+      "markets": [
+        "market1",
+        "market2"
+      ]
+    }
+  },
+  "markets": {
+    "market1": {
+      "name": "market1",
+      "signalId": "Signal_1",
+      "contract_type": "DIGITUNDER",
+      "barrier": "4",
+      "isAdvancedSettingsActive": false,
+      "advancedSettings": {
+        "isPromptMarket": false,
+        "isPromptPrediction": false
+      },
+      "isRandomSettingsActive": false,
+      "randomSettings": {
+        "isRandomMarket": false,
+        "randomMarketList": [
+          "DIGITEVEN",
+          "DIGITODD"
+        ],
+        "isRandomPrediction": false,
+        "randomPredictionList": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ],
+        "isRandomTime": false,
+        "randomTimeList": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ]
+      },
+      "isAnalysisInjectedSettingsActive": false,
+      "analysisInjectedSettings": {
+        "isInjected": false,
+        "injectionTimestamp": 0
+      },
+      "config": {
+        "riskManagement": {
+          "isShared": true,
+          "isRiskManagerInjection": false,
+          "baseStake": 8,
+          "selected": {
+            "name": "martingaleFn",
+            "isActive": true,
+            "stakeArr": [
+              10
+            ],
+            "multiplier": 2,
+            "activeOnLose": true,
+            "activateLimit": 1,
+            "deactivateLimit": 100
+          }
+        },
+        "executionTime": {
+          "isShared": false,
+          "duration": 1,
+          "duration_unit": "t"
+        },
+        "strategy": {
+          "isActive": true,
+          "isShared": false,
+          "selected": []
+        },
+        "volatilities": {
+          "isShared": true,
+          "symbols": [
+            "1HZ10V"
+          ],
+          "switch": {
+            "isActive": false,
+            "condition": "loses",
+            "count": 2
+          }
+        },
+        "pauseTrading": {
+          "isShared": false,
+          "pause": {
+            "isActive": false,
+            "condition": "runs",
+            "count": 5,
+            "ticksToPause": 5
+          }
+        },
+        "virtualHook": {
+          "isShared": false,
+          "switch": {
+            "isActive": false,
+            "condition": "loses",
+            "count": 4,
+            "liveCount": 8,
+            "isRealUntilRecovery": true
+          }
+        },
+        "sequenceAfterSignal": {
+          "isShared": false,
+          "selected": {
+            "isActive": false,
+            "name": "QuickRun",
+            "limit": 5
+          }
+        },
+        "stopCondition": {
+          "isShared": false,
+          "isActive": false,
+          "condition": "OverallWins",
+          "limit": 8
+        },
+        "tpsl": {
+          "isShared": false,
+          "isActive": false,
+          "tp": 280,
+          "sl": 170
+        }
+      }
+    },
+    "market2": {
+      "name": "market2",
+      "signalId": "Signal_1773921872233_2958378",
+      "contract_type": "DIGITOVER",
+      "barrier": "4",
+      "isAdvancedSettingsActive": false,
+      "advancedSettings": {
+        "isPromptMarket": false,
+        "isPromptPrediction": false
+      },
+      "isRandomSettingsActive": false,
+      "randomSettings": {
+        "isRandomMarket": false,
+        "randomMarketList": [
+          "DIGITEVEN",
+          "DIGITODD"
+        ],
+        "isRandomPrediction": false,
+        "randomPredictionList": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ],
+        "isRandomTime": false,
+        "randomTimeList": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ]
+      },
+      "isAnalysisInjectedSettingsActive": false,
+      "analysisInjectedSettings": {
+        "isInjected": false,
+        "injectionTimestamp": 0
+      },
+      "config": {
+        "riskManagement": {
+          "isShared": true,
+          "isRiskManagerInjection": false,
+          "baseStake": 8,
+          "selected": {
+            "name": "martingaleFn",
+            "isActive": true,
+            "stakeArr": [
+              10
+            ],
+            "multiplier": 2,
+            "activeOnLose": true,
+            "activateLimit": 1,
+            "deactivateLimit": 100
+          }
+        },
+        "executionTime": {
+          "isShared": false,
+          "duration": 1,
+          "duration_unit": "t"
+        },
+        "strategy": {
+          "isActive": true,
+          "isShared": false,
+          "selected": []
+        },
+        "volatilities": {
+          "isShared": true,
+          "symbols": [
+            "1HZ10V"
+          ],
+          "switch": {
+            "isActive": false,
+            "condition": "loses",
+            "count": 2
+          }
+        },
+        "pauseTrading": {
+          "isShared": false,
+          "pause": {
+            "isActive": false,
+            "condition": "runs",
+            "count": 5,
+            "ticksToPause": 5
+          }
+        },
+        "virtualHook": {
+          "isShared": false,
+          "switch": {
+            "isActive": false,
+            "condition": "loses",
+            "count": 4,
+            "liveCount": 8,
+            "isRealUntilRecovery": true
+          }
+        },
+        "sequenceAfterSignal": {
+          "isShared": false,
+          "selected": {
+            "isActive": false,
+            "name": "QuickRun",
+            "limit": 5
+          }
+        },
+        "stopCondition": {
+          "isShared": false,
+          "isActive": false,
+          "condition": "OverallWins",
+          "limit": 8
+        },
+        "tpsl": {
+          "isShared": false,
+          "isActive": false,
+          "tp": 280,
+          "sl": 170
+        }
+      }
+    }
+  }
+}
+]]></data>
