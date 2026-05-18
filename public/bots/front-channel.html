@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Deriv — Front Channel</title>
+
+  <!-- Minimal, strict CSP to reduce risk (adjust if you need external resources) -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; connect-src 'self' https:; img-src 'self' data:; style-src 'self' 'unsafe-inline';">
+
+  <script>
+    /**
+     * front-channel.html
+     * Purpose: run in a small, isolated window/frame used for logout/front-channel signaling.
+     * Behavior:
+     *  - If this document is rendered cross-origin (access to top.location throws), clear sensitive client storage.
+     *  - If same-origin, do nothing (preserve session).
+     *  - Always avoid leaking any data to the parent via URL or DOM.
+     *  - Attempt to notify same-origin clients via BroadcastChannel when available.
+     */
+
+    (function () {
+      'use strict';
+
+      const SENSITIVE_KEYS = [
+        'accountsList',
+        'clientAccounts',
+        'callback_token',
+        'authToken',
+        'active_loginid',
+        'client.accounts'
+      ];
+
+      // Safe helper to remove keys from storage
+      function clearSensitiveStorage() {
+        try {
+          SENSITIVE_KEYS.forEach(k => {
+            try { localStorage.removeItem(k); } catch (_) {}
+            try { sessionStorage.removeItem(k); } catch (_) {}
+          });
+        } catch (_) {}
+      }
+
+      // Notify same-origin clients (if any) that logout/cleanup occurred
+      function notifyClients() {
+        try {
+          // BroadcastChannel is ideal for same-origin messaging
+          if ('BroadcastChannel' in self) {
+            const bc = new BroadcastChannel('deriv-auth');
+            bc.postMessage({ type: 'front-channel-logout', timestamp: Date.now() });
+            bc.close();
+          } else if (self.clients && self.clients.matchAll) {
+            // Fallback: postMessage to all controlled clients (service worker context)
+            self.clients.matchAll().then(clients => {
+              clients.forEach(client => {
+                try { client.postMessage({ type: 'front-channel-logout', timestamp: Date.now() }); } catch (_) {}
+              });
+            }).catch(() => {});
+          }
+        } catch (_) {}
+      }
+
+      // Primary origin check: try to access top.location; if cross-origin, this will throw
+      try {
+        // If this frame is same-origin with the top window, top.location is accessible
+        const topOrigin = top.location && top.location.origin;
+        const selfOrigin = self.location && self.location.origin;
+
+        // If origins differ, treat as cross-origin and clear sensitive storage
+        if (!topOrigin || topOrigin !== selfOrigin) {
+          clearSensitiveStorage();
+          notifyClients();
+          // Replace history state to remove any query fragments that might contain tokens
+          try { history.replaceState(null, '', '/'); } catch (_) {}
+        }
+        // If same-origin, do nothing — the parent application controls session lifecycle
+      } catch (err) {
+        // Accessing top.location threw — cross-origin scenario
+        clearSensitiveStorage();
+        notifyClients();
+        try { history.replaceState(null, '', '/'); } catch (_) {}
+      }
+
+      // Defensive: ensure no accidental DOM exposure
+      try {
+        // Remove any query params from location bar (best-effort)
+        if (location.search && location.replace) {
+          const cleanUrl = location.pathname + location.hash;
+          try { location.replace(cleanUrl); } catch (_) {}
+        }
+      } catch (_) {}
+    })();
+  </script>
+</head>
+
+<body>
+  <noscript>
+    <meta http-equiv="refresh" content="0;url=/" />
+  </noscript>
+
+  <!-- Intentionally empty UI: this page only performs secure front-channel cleanup -->
+</body>
+</html>
