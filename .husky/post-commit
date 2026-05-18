@@ -1,0 +1,86 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Enhanced post-commit hook
+# - Runs ShiftAI analysis non-blocking
+# - Respects SKIP_SHIFTAI=1 to bypass in CI or locally
+# - Uses npx if available, falls back to local node_modules
+# - Captures output to a rotating log file for later inspection
+# - Enforces a timeout so the hook never hangs the commit process
+# - Preserves exit code (always exits 0 so commit is not blocked)
+
+# Configuration
+COMMIT_HASH="$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
+LOG_DIR=".husky/logs"
+LOG_FILE="${LOG_DIR}/post-commit-$(date +%Y%m%d).log"
+TIMEOUT_SECONDS=20
+SHIFTCLI="npx --no -- @deriv-com/shiftai-cli hook post-commit"
+
+# Allow explicit bypass
+if [ "x$SKIP_SHIFTAI" = "x1" ] || [ "x$SKIP_SHIFT_AI" = "x1" ]; then
+  echo "⚠️  ShiftAI analysis skipped via SKIP_SHIFTAI"
+  exit 0
+fi
+
+# Ensure log directory exists
+mkdir -p "$LOG_DIR"
+
+# Helper: run command with timeout in background and redirect output
+run_with_timeout() {
+  cmd="$1"
+  timeout="$2"
+  {
+    # Start the command in a subshell so we can capture PID
+    ( eval "$cmd" ) >>"$LOG_FILE" 2>&1 &
+    pid=$!
+    # Wait with timeout
+    SECONDS=0
+    while kill -0 "$pid" >/dev/null 2>&1; do
+      if [ "$SECONDS" -ge "$timeout" ]; then
+        echo "[$(date +%Y-%m-%dT%H:%M:%S)] Timeout reached (${timeout}s). Killing PID $pid" >>"$LOG_FILE"
+        kill -9 "$pid" >/dev/null 2>&1 || true
+        return 124
+      fi
+      sleep 1
+    done
+    wait "$pid"
+    return $?
+  }
+}
+
+# Resolve executable: prefer npx, else local binary
+resolve_command() {
+  if command -v npx >/dev/null 2>&1; then
+    echo "npx --no -- @deriv-com/shiftai-cli hook post-commit"
+    return 0
+  fi
+
+  if [ -x "./node_modules/.bin/shiftai-cli" ]; then
+    echo "./node_modules/.bin/shiftai-cli hook post-commit"
+    return 0
+  fi
+
+  # Fallback to the package name via npx (best-effort)
+  echo "npx --no -- @deriv-com/shiftai-cli hook post-commit"
+  return 0
+}
+
+CMD="$(resolve_command)"
+
+# Run ShiftAI in background with timeout and log
+{
+  echo "[$(date +%Y-%m-%dT%H:%M:%S)] post-commit: starting ShiftAI for commit ${COMMIT_HASH}" >>"$LOG_FILE"
+  run_with_timeout "$CMD" "$TIMEOUT_SECONDS"
+  RC=$?
+  if [ $RC -eq 0 ]; then
+    echo "[$(date +%Y-%m-%dT%H:%M:%S)] post-commit: ShiftAI completed successfully for ${COMMIT_HASH}" >>"$LOG_FILE"
+  elif [ $RC -eq 124 ]; then
+    echo "[$(date +%Y-%m-%dT%H:%M:%S)] post-commit: ShiftAI timed out after ${TIMEOUT_SECONDS}s for ${COMMIT_HASH}" >>"$LOG_FILE"
+  else
+    echo "[$(date +%Y-%m-%dT%H:%M:%S)] post-commit: ShiftAI exited with code ${RC} for ${COMMIT_HASH}" >>"$LOG_FILE"
+  fi
+} &
+
+# Keep hook non-blocking: do not prevent commit on analysis failure
+echo "post-commit: ShiftAI analysis started (logs: ${LOG_FILE}). Commit will not be blocked."
+exit 0
