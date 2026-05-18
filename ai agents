@@ -1,0 +1,123 @@
+# Multi-agent friendly project configuration
+# Designed to be portable across Replit, Gitpod, Codespaces, local dev, and other AI agents' runtimes.
+# Keep secrets out of this file; use environment variables or secret stores.
+
+modules = ["nodejs-20", "web", "bash", "python-3", "docker"]
+
+[agent]
+# Allow advanced agents to run in expert mode; agents should still respect user consent and security.
+expertMode = true
+# Optional: list of trusted agent identifiers that may run automated workflows
+trustedAgents = ["replit", "github-actions", "gitpod", "codespaces", "local"]
+
+[nix]
+# Channel used for Nix-based environments; keep stable but allow override via env var.
+channel = "${NIX_CHANNEL:-stable-25_05}"
+
+[workflows]
+# UI label for the primary workflow button in agent UIs
+runButton = "Project"
+
+# Default concurrency controls for workflows
+defaultConcurrencyGroup = "project-workflows"
+cancel-in-progress = true
+
+# Top-level workflow definitions
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+description = "High-level workflow to surface available tasks to agents and UIs."
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Dev Server"
+
+[[workflows.workflow]]
+name = "Dev Server"
+author = "agent"
+description = "Start local development server and expose ports for preview."
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run start"
+waitForPort = 5000
+# Optional health check path for agents to verify readiness
+healthCheck = "/healthz"
+healthCheckTimeout = 30
+
+[workflows.workflow.metadata]
+outputType = "webview"
+# Provide a hint to agents about the primary artifact directory
+artifactDir = "dist"
+
+# Port mappings for local preview and external exposure
+[[ports]]
+localPort = 5000
+externalPort = 80
+protocol = "http"
+description = "Dev server preview port"
+
+[[ports]]
+localPort = 9229
+externalPort = 9229
+protocol = "tcp"
+description = "Node debugger port (optional)"
+
+[deployment]
+# Generic static deployment configuration suitable for Cloudflare Pages, Vercel, Netlify, or static hosts.
+deploymentTarget = "${DEPLOY_TARGET:-static}" # e.g., static, cloudflare_pages, vercel, netlify
+# Build command as an array to avoid shell parsing differences across agents
+build = ["npm", "run", "build"]
+# Directory to publish after build
+publicDir = "dist"
+# Optional post-build hooks that agents can run
+postBuild = [
+  "npx --no -- @deriv-com/shiftai-cli hook post-build || true",
+  "node ./scripts/post-build-notify.js || true"
+]
+
+[deployment.cloudflare_pages]
+# Optional Cloudflare Pages specific settings; agents should only use these when DEPLOY_TARGET=cloudflare_pages
+projectName = "${CLOUDFLARE_PROJECT_NAME:-}"
+accountId = "${CLOUDFLARE_ACCOUNT_ID:-}"
+branch = "${CLOUDFLARE_DEPLOY_BRANCH:-main}"
+
+[deployment.vercel]
+# Optional Vercel specific settings; agents should only use these when DEPLOY_TARGET=vercel
+projectId = "${VERCEL_PROJECT_ID:-}"
+orgId = "${VERCEL_ORG_ID:-}"
+scope = "${VERCEL_SCOPE:-}"
+
+[security]
+# Agents must not persist secrets in workspace files. Use secret stores or environment variables.
+secretPolicy = "env-only"
+# Recommended list of environment variables that must be provided by the runtime or CI
+requiredEnv = [
+  "NODE_ENV",
+  "CLOUDFLARE_API_TOKEN",
+  "VERCEL_TOKEN"
+]
+# Optional allowlist for files that agents may write to during runs
+writeAllowlist = ["dist/", "logs/", ".cache/"]
+
+[ci]
+# Hints for CI agents and automation
+preCommit = "npx lint-staged --config .lintstagedrc.json"
+prePush = "npm run test"
+formatCommand = "npm run format"
+
+[metadata]
+# Human-friendly project metadata for agent UIs
+name = "${PROJECT_NAME:-My Project}"
+description = "Multi-agent friendly configuration for development and static deployment"
+maintainer = "${MAINTAINER:-you@example.com}"
+repository = "${REPOSITORY_URL:-}"
+
+# Agent capability hints
+capabilities = ["build", "test", "deploy", "preview", "lint"]
+
+# Optional: allow agents to override certain settings via environment variables
+[overrides]
+allowAgentOverrides = true
+allowedOverrideKeys = ["NIX_CHANNEL", "DEPLOY_TARGET", "CLOUDFLARE_PROJECT_NAME", "VERCEL_PROJECT_ID"]
