@@ -1,0 +1,85 @@
+# Node and package manager
+node_modules/
+.pnpm-store/
+.yarn/*
+!.yarn/patches
+!.yarn/releases
+!.yarn/plugins
+!.yarn/sdks
+!.yarn/versions
+
+# Build outputs and bundles
+dist/
+dist/*.js
+build/
+out/
+public/
+.vercel/
+.vercel_build_output/
+.next/
+dist-ssr/
+
+# TypeScript build cache
+tsconfig.tsbuildinfo
+.nx
+.nx/cache
+
+# Logs and reports
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Coverage
+coverage/
+
+# Editor and OS files
+.vscode/
+.idea/
+*.sublime-*
+*.swp
+.DS_Store
+Thumbs.db
+
+# Certificates and keys
+key.pem
+cert.pem
+
+# Environment and secrets
+.env
+.env.*
+*.env
+*.secret
+secrets.json
+nx-cloud.env
+
+# Temporary and cache files
+.cache/
+.cache-loader/
+.parcel-cache/
+tmp/
+temp/
+
+# Generated artifacts and vendor code
+packages/**/scripts/CNAME
+src/_common/lib/**
+
+# ESLint and config artifacts that should not be ignored unless intentional
+# Keep config files in repo for consistent linting across environments
+# .eslintrc.js
+# .eslintrc.cjs
+# rsbuild.config.ts
+
+# Test artifacts and compiled tests
+src/**/__tests__/*.js
+
+# Misc
+.DS_Store
+coverage
+playwright-report/
