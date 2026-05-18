@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Deriv Front Channel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <script>
+    (function () {
+      try {
+        // Check if the front-channel is rendered in the same origin
+        const isSameOrigin = top.location.hostname === self.location.hostname;
+
+        // If same origin, no cleanup needed
+        if (isSameOrigin) return;
+      } catch (err) {
+        // Cross-origin access throws -> clear sensitive localStorage keys
+        const keysToRemove = [
+          'accountsList',
+          'clientAccounts',
+          'callback_token',
+          'authToken',
+          'active_loginid',
+          'client.accounts'
+        ];
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+        console.info('Front-channel: Cleared sensitive localStorage keys due to cross-origin logout.');
+      }
+    })();
+  </script>
+</head>
+<body>
+  <!-- Empty body: this page only handles logout channel logic -->
+</body>
+</html>
