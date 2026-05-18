@@ -1,0 +1,75 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Enhanced post-merge hook
+# - Runs ./hooks/post-merge.sh if available
+# - Non-blocking: will not prevent merge on failure
+# - Timeout configurable via POST_MERGE_TIMEOUT (seconds)
+# - Logs output to .husky/logs/post-merge-YYYYMMDD.log
+# - Can be skipped with SKIP_POST_MERGE=1
+
+HOOK_SCRIPT="./hooks/post-merge.sh"
+LOG_DIR=".husky/logs"
+LOG_FILE="${LOG_DIR}/post-merge-$(date +%Y%m%d).log"
+TIMEOUT_SECONDS="${POST_MERGE_TIMEOUT:-30}"
+
+# Allow explicit bypass
+if [ "x$SKIP_POST_MERGE" = "x1" ]; then
+  echo "⚠️  post-merge hook skipped via SKIP_POST_MERGE"
+  exit 0
+fi
+
+# Ensure log directory exists
+mkdir -p "$LOG_DIR"
+
+# If hook script doesn't exist, nothing to do
+if [ ! -f "$HOOK_SCRIPT" ]; then
+  echo "post-merge: no hook script found at ${HOOK_SCRIPT}; nothing to run." >>"$LOG_FILE"
+  exit 0
+fi
+
+# Ensure hook script is executable
+if [ ! -x "$HOOK_SCRIPT" ]; then
+  chmod +x "$HOOK_SCRIPT" 2>>"$LOG_FILE" || true
+fi
+
+# Run a command with timeout (best-effort)
+run_with_timeout() {
+  cmd="$1"
+  timeout="$2"
+
+  # Start command in background and capture PID
+  ( sh -c "$cmd" ) >>"$LOG_FILE" 2>&1 &
+  pid=$!
+
+  SECONDS=0
+  while kill -0 "$pid" >/dev/null 2>&1; do
+    if [ "$SECONDS" -ge "$timeout" ]; then
+      echo "[$(date +%Y-%m-%dT%H:%M:%S)] post-merge: timeout (${timeout}s) reached. Killing PID $pid" >>"$LOG_FILE"
+      kill -9 "$pid" >/dev/null 2>&1 || true
+      return 124
+    fi
+    sleep 1
+  done
+
+  wait "$pid"
+  return $?
+}
+
+# Run the hook and log start/finish
+{
+  echo "[$(date +%Y-%m-%dT%H:%M:%S)] post-merge: starting ${HOOK_SCRIPT}" >>"$LOG_FILE"
+  run_with_timeout "$HOOK_SCRIPT" "$TIMEOUT_SECONDS"
+  RC=$?
+  if [ $RC -eq 0 ]; then
+    echo "[$(date +%Y-%m-%dT%H:%M:%S)] post-merge: completed successfully" >>"$LOG_FILE"
+  elif [ $RC -eq 124 ]; then
+    echo "[$(date +%Y-%m-%dT%H:%M:%S)] post-merge: timed out after ${TIMEOUT_SECONDS}s" >>"$LOG_FILE"
+  else
+    echo "[$(date +%Y-%m-%dT%H:%M:%S)] post-merge: exited with code ${RC}" >>"$LOG_FILE"
+  fi
+} &
+
+# Inform developer and exit 0 so merge is not blocked
+echo "post-merge: hook started (logs: ${LOG_FILE}). Merge will not be blocked by hook execution."
+exit 0
