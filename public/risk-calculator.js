@@ -46,4 +46,3 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize with default values
   calculateResults();
 });
-
