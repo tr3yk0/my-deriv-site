@@ -1,137 +1,263 @@
 <!doctype html>
 <html lang="en" dir="auto">
-    <head>
-        <meta charset="UTF-8" />
-        <link rel="icon" type="image/svg+xml" href="/deriv-logo.svg" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 
-        <!-- PWA Manifest -->
-        <link rel="manifest" href="/manifest.json" />
+    <!-- Primary metadata -->
+    <title>Build a trading bot without coding | Deriv Bot</title>
+    <meta name="title" content="Build a trading bot without coding | Deriv Bot" />
+    <meta name="description" content="Import your current bot or learn how to create a trading bot from scratch with our guides, FAQs, and tutorials. Start with a quick strategy." />
 
-        <!-- PWA Meta Tags -->
-        <meta name="theme-color" content="#ff444f" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Deriv Bot" />
-        <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="msapplication-TileColor" content="#ff444f" />
-        <meta name="msapplication-tap-highlight" content="no" />
+    <!-- Open Graph -->
+    <meta property="og:title" content="Deriv Bot" />
+    <meta property="og:description" content="Import your current bot or learn how to create a trading bot from scratch with our guides, FAQs, and tutorials. Start with a quick strategy." />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en_US" />
 
-        <!-- Apple Touch Icons -->
-        <link rel="apple-touch-icon" href="/assets/icons/pwa/icon-152x152.png" />
-        <link rel="apple-touch-icon" sizes="152x152" href="/assets/icons/pwa/icon-152x152.png" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/pwa/icon-192x192.png" />
-        <meta name="title" content="Build a trading bot without coding | Deriv Bot." />
-        <meta
-            name="description"
-            content="Import your current bot or learn how to create a trading bot from scratch with our detailed guides, FAQs, and tutorials. Start with a quick strategy!"
-        />
-        <meta property="og:title" content="Deriv Bot" />
-        <meta
-            property="og:description"
-            content="Import your current bot or learn how to create a trading bot from scratch with our detailed guides, FAQs, and tutorials. Start with a quick strategy!"
-        />
-        <title>Build a trading bot without coding | Deriv Bot.</title>
-        <style>
-            :root {
-                font-size: 62.5%;
-            }
-        </style>
-    </head>
+    <!-- Canonical -->
+    <link rel="canonical" href="/" />
 
-    <body class="body theme theme--light">
-        <div id="modal_root" class="modal-root"></div>
-        <div id="popup_root" class="popup-root"></div>
-        <div id="root"></div>
-        <!-- LiveChat script -->
-        <script type="text/javascript" defer>
-            window.__lc = window.__lc || {};
-            window.__lc.license = 12049137;
-            window.__lc.asyncInit = true;
-            (function (n, t, c) {
-                function i(n) {
-                    return e._h ? e._h.apply(null, n) : e._q.push(n);
+    <!-- Favicon and preloads -->
+    <link rel="icon" type="image/svg+xml" href="/deriv-logo.svg" />
+    <link rel="preload" href="/deriv-logo.svg" as="image" />
+    <link rel="preconnect" href="https://cdn.livechatinc.com" crossorigin />
+
+    <!-- PWA Manifest and icons -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#ff444f" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Deriv Bot" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="msapplication-TileColor" content="#ff444f" />
+    <meta name="msapplication-tap-highlight" content="no" />
+
+    <link rel="apple-touch-icon" sizes="152x152" href="/assets/icons/pwa/icon-152x152.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/pwa/icon-180x180.png" />
+    <link rel="icon" sizes="192x192" href="/assets/icons/pwa/icon-192x192.png" />
+
+    <!-- Security hint: Content Security Policy (report-only recommended first) -->
+    <!--
+      Note: CSP below is a conservative starter. Adjust sources to match your actual CDNs and inline needs.
+      Use report-only mode in production to tune before enforcing.
+    -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https:; img-src 'self' data: https:; script-src 'self' https://cdn.livechatinc.com 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https:; font-src 'self' https: data:;">
+
+    <!-- Accessibility and performance -->
+    <meta name="color-scheme" content="light dark" />
+    <meta name="referrer" content="no-referrer-when-downgrade" />
+
+    <style>
+        :root {
+            font-size: 62.5%;
+            --brand-color: #ff444f;
+            --bg: #ffffff;
+            --text: #111827;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Minimal visually-hidden helper for accessibility */
+        .sr-only {
+            position: absolute !important;
+            width: 1px; height: 1px;
+            padding: 0; margin: -1px;
+            overflow: hidden; clip: rect(0,0,0,0);
+            white-space: nowrap; border: 0;
+        }
+
+        /* Offline indicator */
+        #network-status {
+            position: fixed;
+            left: 1rem;
+            bottom: 1rem;
+            background: rgba(0,0,0,0.75);
+            color: #fff;
+            padding: 0.6rem 0.9rem;
+            border-radius: 6px;
+            font-size: 1.2rem;
+            display: none;
+            z-index: 9999;
+        }
+        #network-status[data-online="false"] { display: block; background: #b91c1c; }
+        #network-status[data-online="true"] { display: block; background: #059669; }
+    </style>
+</head>
+
+<body class="body theme theme--light">
+    <div id="modal_root" class="modal-root" aria-hidden="true"></div>
+    <div id="popup_root" class="popup-root" aria-hidden="true"></div>
+    <div id="root" role="main" aria-live="polite"></div>
+
+    <noscript>
+        <div style="padding:1rem;background:#fff3cd;color:#856404;border-radius:6px;margin:1rem;">
+            JavaScript is required for the full experience. Please enable JavaScript in your browser.
+        </div>
+    </noscript>
+
+    <div id="network-status" aria-hidden="true" data-online="true">Online</div>
+
+    <!-- LiveChat loader (deferred, non-blocking, safe) -->
+    <script type="text/javascript">
+        (function (w, d) {
+            // Defer loading external chat script to avoid blocking initial render.
+            // Load after DOMContentLoaded and a short idle timeout.
+            function loadLiveChat() {
+                try {
+                    if (!w.__lc) w.__lc = {};
+                    w.__lc.license = w.__lc.license || 12049137;
+                    w.__lc.asyncInit = true;
+
+                    // Lightweight API shim to queue calls until the widget loads
+                    if (!w.LiveChatWidget) {
+                        var q = [];
+                        var api = {
+                            _q: q,
+                            _h: null,
+                            _v: '2.0',
+                            on: function () { q.push(['on', Array.prototype.slice.call(arguments)]); },
+                            once: function () { q.push(['once', Array.prototype.slice.call(arguments)]); },
+                            off: function () { q.push(['off', Array.prototype.slice.call(arguments)]); },
+                            get: function () { q.push(['get', Array.prototype.slice.call(arguments)]); },
+                            call: function () { q.push(['call', Array.prototype.slice.call(arguments)]); },
+                            init: function () {
+                                // load remote script asynchronously
+                                var s = d.createElement('script');
+                                s.async = true;
+                                s.type = 'text/javascript';
+                                s.src = 'https://cdn.livechatinc.com/tracking.js';
+                                s.crossOrigin = 'anonymous';
+                                s.onload = function () { /* optional hook */ };
+                                s.onerror = function () { console.warn('LiveChat failed to load'); };
+                                d.head.appendChild(s);
+                            }
+                        };
+                        w.LiveChatWidget = api;
+                    }
+
+                    // Use requestIdleCallback when available to avoid jank
+                    var schedule = w.requestIdleCallback || function (fn) { return setTimeout(fn, 1500); };
+                    schedule(function () {
+                        try {
+                            w.LiveChatWidget.init();
+                        } catch (e) {
+                            // Fail silently; chat is non-critical
+                            console.warn('LiveChat init error', e);
+                        }
+                    });
+                } catch (err) {
+                    console.warn('LiveChat loader error', err);
                 }
-                var e = {
-                    _q: [],
-                    _h: null,
-                    _v: '2.0',
-                    on: function () {
-                        i(['on', c.call(arguments)]);
-                    },
-                    once: function () {
-                        i(['once', c.call(arguments)]);
-                    },
-                    off: function () {
-                        i(['off', c.call(arguments)]);
-                    },
-                    get: function () {
-                        if (!e._h) throw new Error('[LiveChatWidget] You can’t use getters before load.');
-                        return i(['get', c.call(arguments)]);
-                    },
-                    call: function () {
-                        i(['call', c.call(arguments)]);
-                    },
-                    init: function () {
-                        setTimeout(() => {
-                            var n = t.createElement('script');
-                            ((n.async = !0),
-                                (n.type = 'text/javascript'),
-                                (n.src = 'https://cdn.livechatinc.com/tracking.js'),
-                                t.head.appendChild(n));
-                        }, 3000);
-                    },
-                };
-                (!n.__lc.asyncInit && e.init(), (n.LiveChatWidget = n.LiveChatWidget || e));
-            })(window, document, [].slice);
-        </script>
-        <!-- End LiveChat script -->
-
-        <!-- Browser Service Worker Prevention -->
-        <script>
-            // Check browser compatibility and prevent service worker issues
-            const userAgent = navigator.userAgent.toLowerCase();
-            const isFirefox = userAgent.includes('firefox');
-            const isSafari = userAgent.includes('safari') && !userAgent.includes('chrome');
-            const shouldSkipSW = isFirefox || isSafari;
-
-            if (shouldSkipSW) {
-                const browserName = isFirefox ? 'Firefox' : 'Safari';
-                console.log(
-                    `[HTML] ${browserName} detected - preventing service worker registration to avoid chunk loading issues`
-                );
-
-                // Cleanup any existing service workers
-                if ('serviceWorker' in navigator) {
-                    navigator.serviceWorker
-                        .getRegistrations()
-                        .then(registrations => {
-                            registrations.forEach(registration => {
-                                console.log(`[HTML] Unregistering existing SW for ${browserName}:`, registration.scope);
-                                registration.unregister();
-                            });
-                        })
-                        .catch(error => {
-                            console.error('[HTML] Failed to cleanup service workers:', error);
-                        });
-                }
             }
 
-            // Check online/offline status
-            console.log('[HTML] Online status:', navigator.onLine);
-            window.addEventListener('online', () => {
-                console.log('[HTML] Back online');
-            });
-            window.addEventListener('offline', () => {
-                console.log('[HTML] Gone offline');
-            });
+            if (d.readyState === 'complete' || d.readyState === 'interactive') {
+                loadLiveChat();
+            } else {
+                d.addEventListener('DOMContentLoaded', loadLiveChat, { once: true });
+            }
+        })(window, document);
+    </script>
 
-            // Listen for service worker messages if registered by PWA utils (non-problematic browsers only)
-            if ('serviceWorker' in navigator && !shouldSkipSW) {
-                navigator.serviceWorker.addEventListener('message', event => {
-                    console.log('[HTML] Message from service worker:', event.data);
+    <!-- Service Worker registration with feature detection and safe guards -->
+    <script type="text/javascript">
+        (function () {
+            // Only register service worker on secure contexts and supported browsers
+            if (!('serviceWorker' in navigator) || location.protocol !== 'https:') {
+                // Do not attempt registration in insecure contexts
+                return;
+            }
+
+            // Skip registration for known problematic browsers
+            var ua = navigator.userAgent || '';
+            var isFirefox = /firefox/i.test(ua);
+            var isSafari = /safari/i.test(ua) && !/chrome/i.test(ua);
+            var shouldSkip = isFirefox || isSafari;
+
+            if (shouldSkip) {
+                // Do not unregister blindly; only unregister if scope matches this origin and if a problematic SW exists
+                navigator.serviceWorker.getRegistrations().then(function (regs) {
+                    regs.forEach(function (reg) {
+                        try {
+                            // Only unregister if the registration scope is same-origin and not our expected scope
+                            if (reg.scope && reg.scope.indexOf(location.origin) === 0) {
+                                // If you have a known-good scope, compare and skip unregistering it
+                                // reg.unregister();
+                                console.info('[SW] Skipping registration for this browser to avoid chunk loading issues', reg.scope);
+                            }
+                        } catch (e) {
+                            console.warn('[SW] Error while checking registrations', e);
+                        }
+                    });
+                }).catch(function (err) {
+                    console.warn('[SW] Failed to inspect registrations', err);
                 });
+                return;
             }
-        </script>
-    </body>
+
+            // Register service worker with a safe try/catch and timeout
+            var swUrl = '/service-worker.js';
+            var registrationTimeout = 8000;
+
+            var didRegister = false;
+            var timer = setTimeout(function () {
+                if (!didRegister) {
+                    console.warn('[SW] Registration timed out');
+                }
+            }, registrationTimeout);
+
+            navigator.serviceWorker.register(swUrl).then(function (reg) {
+                didRegister = true;
+                clearTimeout(timer);
+                console.info('[SW] Registered with scope', reg.scope);
+                // Optional: listen for updates
+                reg.addEventListener('updatefound', function () {
+                    var installing = reg.installing;
+                    if (installing) {
+                        installing.addEventListener('statechange', function () {
+                            console.info('[SW] state:', installing.state);
+                        });
+                    }
+                });
+            }).catch(function (err) {
+                clearTimeout(timer);
+                console.warn('[SW] Registration failed', err);
+            });
+
+            // Listen for messages from SW
+            navigator.serviceWorker && navigator.serviceWorker.addEventListener && navigator.serviceWorker.addEventListener('message', function (event) {
+                try {
+                    console.info('[SW] Message:', event.data);
+                } catch (e) {
+                    // ignore
+                }
+            });
+        })();
+    </script>
+
+    <!-- Network status UI and handlers -->
+    <script type="text/javascript">
+        (function () {
+            var statusEl = document.getElementById('network-status');
+            function updateStatus() {
+                var online = navigator.onLine;
+                statusEl.setAttribute('data-online', online ? 'true' : 'false');
+                statusEl.textContent = online ? 'Online' : 'Offline';
+                statusEl.setAttribute('aria-hidden', online ? 'true' : 'false');
+            }
+            window.addEventListener('online', updateStatus);
+            window.addEventListener('offline', updateStatus);
+            // Initialize
+            updateStatus();
+        })();
+    </script>
+</body>
 </html>
