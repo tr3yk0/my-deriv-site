@@ -1,0 +1,88 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Enhanced pre-commit hook
+# - Runs lint-staged (blocking) to enforce formatting/lint rules
+# - Runs ShiftAI pre-commit hook (non-blocking) to detect/strip AI markers
+# - Respects SKIP_LINT_STAGED and SKIP_SHIFTAI env vars to opt out
+# - Uses npx when available, falls back to local node_modules binaries
+# - Adds a short timeout for the non-blocking ShiftAI run and logs output
+# - Preserves lint-staged exit code so commits fail when linting fails
+
+LOG_DIR=".husky/logs"
+mkdir -p "$LOG_DIR"
+LINT_LOG="${LOG_DIR}/pre-commit-lint-$(date +%Y%m%d).log"
+SHIFTAI_LOG="${LOG_DIR}/pre-commit-shiftai-$(date +%Y%m%d).log"
+
+# Helper to resolve a binary via npx or local node_modules
+resolve_cmd() {
+  # $1 = package name or local binary path (e.g., "lint-staged" or "./node_modules/.bin/lint-staged")
+  if command -v npx >/dev/null 2>&1; then
+    echo "npx --no -- $1"
+    return 0
+  fi
+
+  if [ -x "./node_modules/.bin/$1" ]; then
+    echo "./node_modules/.bin/$1"
+    return 0
+  fi
+
+  # Fallback to npx if local binary not found
+  echo "npx --no -- $1"
+  return 0
+}
+
+# Run lint-staged (blocking). Allow bypass via SKIP_LINT_STAGED=1
+if [ "x$SKIP_LINT_STAGED" = "x1" ]; then
+  echo "⚠️  lint-staged skipped via SKIP_LINT_STAGED"
+  LINT_EXIT=0
+else
+  LINT_CMD="$(resolve_cmd lint-staged)"
+  echo "pre-commit: running lint-staged -> $LINT_CMD --allow-empty" | tee -a "$LINT_LOG"
+  # Run lint-staged and capture exit code; output appended to log
+  sh -c "$LINT_CMD --allow-empty" >>"$LINT_LOG" 2>&1
+  LINT_EXIT=$?
+  if [ $LINT_EXIT -ne 0 ]; then
+    echo "pre-commit: lint-staged failed (exit $LINT_EXIT). See $LINT_LOG for details."
+  fi
+fi
+
+# Run ShiftAI pre-commit hook in background (non-blocking). Allow bypass via SKIP_SHIFTAI=1
+if [ "x$SKIP_SHIFTAI" = "x1" ] || [ "x$SKIP_SHIFT_AI" = "x1" ]; then
+  echo "⚠️  ShiftAI pre-commit skipped via SKIP_SHIFTAI" >>"$SHIFTAI_LOG"
+else
+  # Resolve ShiftAI command
+  if command -v npx >/dev/null 2>&1; then
+    SHIFTAI_CMD="npx --no -- @deriv-com/shiftai-cli hook pre-commit"
+  elif [ -x "./node_modules/.bin/shiftai-cli" ]; then
+    SHIFTAI_CMD="./node_modules/.bin/shiftai-cli hook pre-commit"
+  else
+    SHIFTAI_CMD="npx --no -- @deriv-com/shiftai-cli hook pre-commit"
+  fi
+
+  # Run ShiftAI in background with a short timeout so it cannot hang the commit
+  (
+    echo "[$(date +%Y-%m-%dT%H:%M:%S)] pre-commit: starting ShiftAI" >>"$SHIFTAI_LOG"
+    # Start command in subshell
+    ( sh -c "$SHIFTAI_CMD" ) >>"$SHIFTAI_LOG" 2>&1 &
+    pid=$!
+    # Wait up to TIMEOUT seconds for completion
+    TIMEOUT="${PRE_COMMIT_SHIFTAI_TIMEOUT:-10}"
+    SECONDS=0
+    while kill -0 "$pid" >/dev/null 2>&1; do
+      if [ "$SECONDS" -ge "$TIMEOUT" ]; then
+        echo "[$(date +%Y-%m-%dT%H:%M:%S)] pre-commit: ShiftAI timed out after ${TIMEOUT}s; killing PID $pid" >>"$SHIFTAI_LOG"
+        kill -9 "$pid" >/dev/null 2>&1 || true
+        break
+      fi
+      sleep 1
+    done
+    wait "$pid" 2>/dev/null || true
+    echo "[$(date +%Y-%m-%dT%H:%M:%S)] pre-commit: ShiftAI finished (logs: $SHIFTAI_LOG)" >>"$SHIFTAI_LOG"
+  ) &
+
+  echo "pre-commit: ShiftAI analysis started in background (logs: $SHIFTAI_LOG). It will not block the commit."
+fi
+
+# Preserve lint-staged exit code so commit fails when linting fails
+exit $LINT_EXIT
