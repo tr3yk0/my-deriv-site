@@ -1,0 +1,435 @@
+# =============================================================================
+# .agent-config.toml
+# Universal AI Agent Project Configuration
+# =============================================================================
+# Compatible with: Replit · Gitpod · GitHub Codespaces · Cursor · Windsurf
+#                  Devin · SWE-agent · OpenHands · Aider · Continue.dev
+#                  Copilot Workspace · AutoGPT · CrewAI · LangChain Agents
+#                  Cline · Bolt.new · v0 · Lovable · Pythagora · Sweep · Grit
+#                  Claude (Anthropic) · GPT-4 (OpenAI) · Gemini (Google)
+#                  Any MCP-compatible agent runtime
+#
+# RULES FOR ALL AGENTS:
+#   1. Never write secrets into this file — use environment variables only.
+#   2. Prefer reversible actions; ask the user before destructive operations.
+#   3. Run the smallest scope of change that satisfies the task.
+#   4. Respect writeAllowlist — do not write outside listed paths.
+#   5. Always run lint + test before marking a task complete.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Project identity
+# -----------------------------------------------------------------------------
+[project]
+name        = "${PROJECT_NAME:-My Project}"
+description = "Universal multi-agent project configuration"
+version     = "${PROJECT_VERSION:-0.1.0}"
+maintainer  = "${MAINTAINER:-you@example.com}"
+repository  = "${REPOSITORY_URL:-}"
+license     = "${LICENSE:-MIT}"
+language    = "polyglot"          # primary stack hint for agents: node | python | go | rust | polyglot
+stack       = ["nodejs-20", "python-3", "docker", "bash"]
+
+# Capabilities agents may advertise/use for this project
+capabilities = [
+  "build", "test", "lint", "format",
+  "deploy", "preview", "docker",
+  "python", "mcp", "web-search"
+]
+
+# -----------------------------------------------------------------------------
+# Runtime environment — safe, non-sensitive defaults only
+# -----------------------------------------------------------------------------
+[env]
+NODE_ENV      = "${NODE_ENV:-development}"
+LOG_LEVEL     = "${LOG_LEVEL:-info}"
+DEPLOY_TARGET = "${DEPLOY_TARGET:-static}"   # static | cloudflare_pages | vercel | netlify | fly | railway | render
+
+# -----------------------------------------------------------------------------
+# Agent behaviour — read by any agent runtime that parses this file
+# -----------------------------------------------------------------------------
+[agent]
+# Agents may operate autonomously on well-scoped tasks
+autonomyLevel = "supervised"       # supervised | semi-autonomous | autonomous
+expertMode    = true
+# Agents MUST stop and ask the user before:
+#   - deleting files outside dist/ or .cache/
+#   - pushing to a protected branch
+#   - making payments or API calls with side-effects
+#   - modifying this config file
+confirmBefore = [
+  "destructive_file_ops",
+  "protected_branch_push",
+  "paid_api_calls",
+  "config_self_modification"
+]
+
+# Trusted agent identifiers — others run in sandboxed/read-only mode
+trustedAgents = [
+  # Cloud IDEs & dev environments
+  "replit", "gitpod", "codespaces", "codesandbox", "stackblitz",
+  # AI coding agents
+  "devin", "swe-agent", "openhands", "aider", "sweep", "grit", "pythagora",
+  # IDE AI assistants
+  "cursor", "windsurf", "cline", "continue", "copilot-workspace",
+  # Generalist AI agents
+  "autogpt", "crewai", "langchain", "claude", "gpt-4", "gemini",
+  # UI/full-stack generators
+  "bolt", "v0", "lovable",
+  # CI/CD systems
+  "github-actions", "gitlab-ci", "circleci", "buildkite", "jenkins",
+  # Local
+  "local"
+]
+
+# MCP (Model Context Protocol) — expose project tools to MCP-compatible agents
+[agent.mcp]
+enabled  = true
+version  = "2025-03-26"          # MCP spec version this config targets
+transport = "stdio"               # stdio | sse | http
+# Tools this project exposes as MCP-callable actions
+exposedTools = ["build", "test", "lint", "format", "preview", "deploy"]
+
+# Agent memory hints — where agents should persist cross-session context
+[agent.memory]
+enabled     = true
+backend     = "file"             # file | redis | sqlite | none
+storagePath = ".agent-memory/"
+# Agents should checkpoint memory after each completed task
+checkpointOnTaskComplete = true
+
+# Agent web-search capability
+[agent.webSearch]
+enabled   = true
+# Agents should search before: implementing unfamiliar APIs, checking latest package versions
+searchBefore = ["unfamiliar_api", "package_version_check", "security_advisories"]
+
+# -----------------------------------------------------------------------------
+# Nix — used by Gitpod, Replit, Codespaces nix devcontainers, and local nix
+# -----------------------------------------------------------------------------
+[nix]
+channel = "${NIX_CHANNEL:-stable-25_05}"
+
+# -----------------------------------------------------------------------------
+# Commands — the single source of truth for how to run anything in this project
+# All agents MUST use these commands rather than guessing.
+# -----------------------------------------------------------------------------
+[commands]
+install  = "npm install"
+dev      = "npm run start"
+build    = "npm run build"
+test     = "npm run test -- --coverage"
+lint     = "npm run lint"
+format   = "npm run format"
+typecheck = "npm run typecheck"
+clean    = "rm -rf dist/ .cache/ coverage/"
+# Python
+pythonDev  = "python -m scripts.main"
+pythonTest = "pytest --tb=short"
+# Docker
+dockerBuild = "docker build -t ${PROJECT_NAME:-my-project}:dev ."
+dockerRun   = "docker run --rm -p 5000:5000 ${PROJECT_NAME:-my-project}:dev"
+# Full CI pipeline — agents run this before marking work done
+ci = "npm run build && npm run test -- --coverage && npm run lint"
+
+# -----------------------------------------------------------------------------
+# Workflows — platform-agnostic task graph
+# Agents should map these to their native task/workflow primitives.
+# -----------------------------------------------------------------------------
+[workflows]
+defaultConcurrency = "project-workflows"
+cancelInProgress   = true
+# Entry point for agent UIs and run buttons
+primary = "dev"
+
+[[workflows.tasks]]
+id          = "dev"
+name        = "Dev Server"
+description = "Start local development server."
+command     = "npm run start"
+port        = 5000
+healthCheck = { path = "/healthz", timeout = 30, retries = 5, interval = 5 }
+output      = "webview"
+artifactDir = "dist"
+
+[[workflows.tasks]]
+id          = "build"
+name        = "Build"
+description = "Compile and bundle the project for production."
+command     = "npm run build"
+output      = "terminal"
+artifactDir = "dist"
+
+[[workflows.tasks]]
+id          = "test"
+name        = "Test"
+description = "Run full test suite with coverage report."
+command     = "npm run test -- --coverage"
+output      = "terminal"
+artifactDir = "coverage"
+
+[[workflows.tasks]]
+id          = "lint"
+name        = "Lint & Format Check"
+description = "Run linter and formatter (non-destructive, read-only)."
+command     = "npm run lint && npm run format -- --check"
+output      = "terminal"
+
+[[workflows.tasks]]
+id          = "python-dev"
+name        = "Python Dev"
+description = "Run Python-side tooling, scripts, or data processing."
+command     = "python -m scripts.main"
+output      = "terminal"
+
+[[workflows.tasks]]
+id          = "python-test"
+name        = "Python Test"
+description = "Run Python test suite."
+command     = "pytest --tb=short"
+output      = "terminal"
+artifactDir = "coverage"
+
+[[workflows.tasks]]
+id          = "docker-build"
+name        = "Docker Build"
+description = "Build and tag the Docker image for local testing."
+command     = "docker build -t ${PROJECT_NAME:-my-project}:dev ."
+output      = "terminal"
+
+[[workflows.tasks]]
+id          = "ci"
+name        = "Full CI Pipeline"
+description = "Build + test + lint in sequence. Run before any commit or PR."
+command     = "npm run build && npm run test -- --coverage && npm run lint"
+output      = "terminal"
+
+# -----------------------------------------------------------------------------
+# Ports
+# -----------------------------------------------------------------------------
+[[ports]]
+local    = 5000
+external = 80
+protocol = "http"
+label    = "Dev server / preview"
+
+[[ports]]
+local    = 8080
+external = 8080
+protocol = "http"
+label    = "API mock / secondary service"
+
+[[ports]]
+local    = 9229
+external = 9229
+protocol = "tcp"
+label    = "Node.js debugger"
+
+[[ports]]
+local    = 5678
+external = 5678
+protocol = "tcp"
+label    = "Python debugger (debugpy)"
+
+# -----------------------------------------------------------------------------
+# Deployment — multi-target, driven by DEPLOY_TARGET env var
+# -----------------------------------------------------------------------------
+[deployment]
+target    = "${DEPLOY_TARGET:-static}"
+command   = ["npm", "run", "build"]
+publicDir = "dist"
+postBuild = [
+  "npx --no -- @deriv-com/shiftai-cli hook post-build || true",
+  "node ./scripts/post-build-notify.js || true"
+]
+
+[deployment.cloudflare_pages]
+projectName = "${CLOUDFLARE_PROJECT_NAME:-}"
+accountId   = "${CLOUDFLARE_ACCOUNT_ID:-}"
+branch      = "${CLOUDFLARE_DEPLOY_BRANCH:-main}"
+
+[deployment.vercel]
+projectId = "${VERCEL_PROJECT_ID:-}"
+orgId     = "${VERCEL_ORG_ID:-}"
+scope     = "${VERCEL_SCOPE:-}"
+
+[deployment.netlify]
+siteId = "${NETLIFY_SITE_ID:-}"
+teamId = "${NETLIFY_TEAM_ID:-}"
+
+[deployment.fly]
+appName = "${FLY_APP_NAME:-}"
+region  = "${FLY_REGION:-iad}"
+
+[deployment.railway]
+projectId = "${RAILWAY_PROJECT_ID:-}"
+
+[deployment.render]
+serviceId = "${RENDER_SERVICE_ID:-}"
+
+# -----------------------------------------------------------------------------
+# Caching
+# -----------------------------------------------------------------------------
+[caching]
+enabled = true
+paths   = [
+  "node_modules/",
+  ".cache/",
+  ".npm/",
+  "__pycache__/",
+  ".pytest_cache/",
+  ".mypy_cache/",
+  ".agent-memory/"
+]
+
+# -----------------------------------------------------------------------------
+# Logging
+# -----------------------------------------------------------------------------
+[logging]
+format  = "json"                    # json | text  — prefer json for agent parsing
+level   = "${LOG_LEVEL:-info}"      # debug | info | warn | error
+outputs = ["stdout", "logs/app.log"]
+# Agents should emit structured logs with these fields:
+structuredFields = ["timestamp", "level", "agent_id", "task_id", "message"]
+
+# -----------------------------------------------------------------------------
+# Security
+# -----------------------------------------------------------------------------
+[security]
+secretPolicy = "env-only"           # Agents MUST NOT write secrets to any file
+
+# Must be set at runtime — agents should fail fast if any are missing
+requiredEnv = [
+  "NODE_ENV"
+  # These are conditionally required based on DEPLOY_TARGET:
+  # "CLOUDFLARE_API_TOKEN"   → when DEPLOY_TARGET=cloudflare_pages
+  # "VERCEL_TOKEN"           → when DEPLOY_TARGET=vercel
+  # "NETLIFY_AUTH_TOKEN"     → when DEPLOY_TARGET=netlify
+  # "FLY_API_TOKEN"          → when DEPLOY_TARGET=fly
+  # "RAILWAY_TOKEN"          → when DEPLOY_TARGET=railway
+]
+
+# Optional but recommended for production
+recommendedEnv = [
+  "SENTRY_DSN",
+  "DATADOG_API_KEY",
+  "OPENTELEMETRY_ENDPOINT"
+]
+
+# Paths agents are allowed to write during automated runs
+writeAllowlist = [
+  "dist/",
+  "logs/",
+  ".cache/",
+  "coverage/",
+  ".agent-memory/"
+]
+
+# Paths agents must NEVER modify without explicit user confirmation
+writeBlocklist = [
+  ".env",
+  ".env.*",
+  "*.pem",
+  "*.key",
+  "secrets/",
+  ".agent-config.toml"
+]
+
+# -----------------------------------------------------------------------------
+# CI/CD integration hints — maps to GitHub Actions, GitLab CI, CircleCI, etc.
+# -----------------------------------------------------------------------------
+[ci]
+preCommit      = "npx lint-staged --config .lintstagedrc.json"
+prePush        = "npm run test"
+formatCheck    = "npm run format -- --check"
+fullPipeline   = "npm run build && npm run test -- --coverage && npm run lint"
+
+# Supported CI systems — agents can auto-generate config files for these
+supportedSystems = [
+  "github-actions",   # .github/workflows/
+  "gitlab-ci",        # .gitlab-ci.yml
+  "circleci",         # .circleci/config.yml
+  "buildkite",        # .buildkite/pipeline.yml
+  "jenkins",          # Jenkinsfile
+  "drone",            # .drone.yml
+  "azure-pipelines"   # azure-pipelines.yml
+]
+
+# -----------------------------------------------------------------------------
+# AI model hints — preferred models per task type
+# Agents may use these as defaults; users can override via env vars.
+# -----------------------------------------------------------------------------
+[ai]
+# Primary provider preference (agents respect what's available in the runtime)
+preferredProvider = "${AI_PROVIDER:-anthropic}"    # anthropic | openai | google | local
+
+[ai.models]
+coding       = "${AI_CODING_MODEL:-claude-sonnet-4-20250514}"
+review       = "${AI_REVIEW_MODEL:-claude-sonnet-4-20250514}"
+documentation = "${AI_DOCS_MODEL:-claude-sonnet-4-20250514}"
+testing      = "${AI_TEST_MODEL:-claude-sonnet-4-20250514}"
+planning     = "${AI_PLAN_MODEL:-claude-sonnet-4-20250514}"
+
+[ai.context]
+# Files agents should always read for project context before starting any task
+alwaysRead = [
+  "README.md",
+  "ARCHITECTURE.md",
+  "docs/CONTRIBUTING.md",
+  ".agent-config.toml"
+]
+# Files agents should ignore (on top of .gitignore)
+ignore = [
+  "node_modules/",
+  "dist/",
+  "coverage/",
+  "*.log",
+  ".agent-memory/",
+  "*.pem",
+  "*.key"
+]
+# Max tokens agents should use per task (soft guidance)
+maxContextTokens = 100000
+
+# Agent task instructions (read by any LLM-based agent)
+[ai.instructions]
+general = """
+You are operating on a polyglot project (Node.js + Python + Docker).
+Always read README.md and ARCHITECTURE.md before starting a task.
+Use the commands defined in [commands] rather than guessing.
+Run the 'ci' command before declaring a task complete.
+Never modify files in writeBlocklist without explicit user confirmation.
+Prefer small, focused commits over large sweeping changes.
+"""
+onError = """
+If a command fails:
+1. Read the full error output carefully.
+2. Check if a dependency is missing (run install command first).
+3. Try the fix. If it fails twice, stop and report to the user.
+Do NOT loop silently on errors.
+"""
+onComplete = """
+After completing a task:
+1. Run the full CI pipeline: [commands.ci]
+2. Summarise what changed and why.
+3. List any follow-up tasks you recommend.
+"""
+
+# -----------------------------------------------------------------------------
+# Agent overrides — keys agents may change via environment variables
+# -----------------------------------------------------------------------------
+[overrides]
+allowAgentOverrides = true
+allowedOverrideKeys = [
+  "NODE_ENV",
+  "LOG_LEVEL",
+  "DEPLOY_TARGET",
+  "NIX_CHANNEL",
+  "AI_PROVIDER",
+  "AI_CODING_MODEL",
+  "CLOUDFLARE_PROJECT_NAME",
+  "VERCEL_PROJECT_ID",
+  "NETLIFY_SITE_ID",
+  "FLY_APP_NAME",
+  "RAILWAY_PROJECT_ID"
+]
