@@ -1,151 +1,1248 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8" />
-        <title>Xenon Tick Analyser</title>
-        <meta name="viewport" content="width=device-width,initial-scale=1" />
-        <link rel="stylesheet" href="style.css" />
-    </head>
-    <body>
-        <div class="box">
-            <h2 id="app-title"></h2>
-            <label id="label-market" for="symbols">Select Market:</label>
-            <select id="symbols"></select>
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Xenon Tick Analyser</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+<style>
+/* ──────────────────────────────────────────
+   CSS VARIABLES & RESET
+────────────────────────────────────────── */
+:root {
+  --bg:        #0a0c10;
+  --surface:   #111419;
+  --surface2:  #181c24;
+  --border:    #1f2530;
+  --accent:    #00e5ff;
+  --accent2:   #ff4d6d;
+  --accent3:   #a8ff78;
+  --accent4:   #ffd166;
+  --text:      #e8eaf2;
+  --muted:     #5a6270;
+  --chip-r:    4px;
+  --radius:    12px;
+  --transition: 160ms cubic-bezier(.4,0,.2,1);
+}
+html.dark { /* already dark by default */ }
+html:not(.dark) {
+  --bg:       #f0f2f8;
+  --surface:  #ffffff;
+  --surface2: #e8eaf2;
+  --border:   #d0d4e0;
+  --text:     #0e1118;
+  --muted:    #6e7a8a;
+}
 
-            <div class="display">
-                <div id="price" class="price">—</div>
-                <div id="digit" class="digit">—</div>
-            </div>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 14px; -webkit-tap-highlight-color: transparent; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  min-height: 100vh;
+  line-height: 1.5;
+  overflow-x: hidden;
+}
 
-            <div class="controls">
-                <label id="label-window" for="ticks-window">Ticks window:</label>
-                <input id="ticks-window" type="number" min="50" max="5000" step="50" value="1000" style="width: 90px" />
-                <span class="hint">(50–5000)</span>
-            </div>
+/* ──────────────────────────────────────────
+   LAYOUT
+────────────────────────────────────────── */
+.app-wrap {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
 
-            <div class="digits-section">
-                <div class="digits-header">
-                    <span id="digits-title">Last 1000 ticks digit distribution</span>
-                    <span id="samples-count" class="samples">0/1000</span>
-                </div>
-                <div id="digits" class="digits"></div>
-                <div class="legend">
-                    <span id="legend-current" class="legend-item"
-                        ><span class="dot dot-current"></span> current digit / most</span
-                    >
-                    <span id="legend-least" class="legend-item"
-                        ><span class="dot dot-least"></span> least frequency</span
-                    >
-                </div>
-            </div>
+/* ──────────────────────────────────────────
+   HEADER
+────────────────────────────────────────── */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.app-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -.02em;
+  color: var(--text);
+}
+.app-title span { color: var(--accent); }
 
-            <div class="separator"></div>
+.status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--muted);
+  display: inline-block;
+  margin-right: .4rem;
+  transition: background var(--transition);
+  box-shadow: none;
+}
+.status-dot.live {
+  background: var(--accent3);
+  box-shadow: 0 0 8px var(--accent3);
+  animation: pulse 1.6s infinite;
+}
+.status-dot.error { background: var(--accent2); }
+@keyframes pulse {
+  0%,100% { opacity:1; }
+  50%      { opacity:.35; }
+}
 
-            <!-- Even/Odd section moved to top -->
-            <div class="eo-section">
-                <div class="eo-header">
-                    <span>Odd/Even Analysis</span>
-                </div>
+.status-label { font-family: 'Space Mono', monospace; font-size: .72rem; color: var(--muted); }
 
-                <!-- Recent E/O digits grid moved up -->
-                <div class="eo-seq">
-                    <div class="eo-seq-header">
-                        <span>Recent E/O</span>
-                        <!-- More button removed - showing all 50 by default -->
-                    </div>
-                    <div id="eo-seq-chips" class="eo-chips"></div>
-                </div>
+/* ──────────────────────────────────────────
+   CONTROLS BAR
+────────────────────────────────────────── */
+.controls-bar {
+  display: flex;
+  gap: .75rem;
+  align-items: center;
+  flex-wrap: wrap;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: .85rem 1.1rem;
+}
+.ctrl-group {
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+  flex: 1;
+  min-width: 140px;
+}
+.ctrl-label {
+  font-size: .68rem;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+select, input[type="number"] {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: 'Space Mono', monospace;
+  font-size: .82rem;
+  padding: .45rem .65rem;
+  outline: none;
+  transition: border-color var(--transition);
+  width: 100%;
+  cursor: pointer;
+}
+select:focus, input[type="number"]:focus { border-color: var(--accent); }
+select option { background: var(--surface); }
 
-                <!-- Bars moved below the recent digits -->
-                <div class="eo-cards">
-                    <div class="eo-card eo-card-even">
-                        <div class="eo-card-value"><span id="eo-even-pct" class="muted">(0%)</span></div>
-                        <div class="eo-barline">
-                            <div id="eo-even-fill" class="eo-fill eo-fill-even" style="width: 0%"></div>
-                        </div>
-                    </div>
-                    <div class="eo-card eo-card-odd">
-                        <div class="eo-card-value"><span id="eo-odd-pct" class="muted">(0%)</span></div>
-                        <div class="eo-barline">
-                            <div id="eo-odd-fill" class="eo-fill eo-fill-odd" style="width: 0%"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+/* Divider */
+.ctrl-divider { width: 1px; background: var(--border); align-self: stretch; margin: 0 .25rem; }
 
-            <div class="separator"></div>
+/* Live price display */
+.price-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: .15rem;
+  margin-left: auto;
+}
+.price-val {
+  font-family: 'Space Mono', monospace;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -.02em;
+  min-width: 110px;
+  text-align: right;
+  transition: color .2s;
+}
+.price-val.up   { color: var(--accent3); }
+.price-val.down { color: var(--accent2); }
+.digit-badge {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  font-size: .7rem;
+  color: var(--muted);
+  font-family: 'Space Mono', monospace;
+}
+.digit-badge strong {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+  min-width: 14px;
+  text-align: center;
+}
+.samples-counter {
+  font-family: 'Space Mono', monospace;
+  font-size: .68rem;
+  color: var(--muted);
+  text-align: right;
+}
 
-            <!-- Over/Under section moved below Even/Odd -->
-            <div class="ou-section">
-                <div class="ou-header">
-                    <label id="label-ou" for="ou-threshold">Over/Under:</label>
-                    <select id="ou-threshold"></select>
-                </div>
-                <div class="ou-cards">
-                    <div class="ou-card ou-card-under">
-                        <div class="ou-card-title">Under</div>
-                        <div class="ou-card-value"><span id="ou-under-pct" class="muted">(0%)</span></div>
-                        <div class="ou-barline">
-                            <div id="ou-under-fill" class="ou-fill ou-fill-under" style="width: 0%"></div>
-                        </div>
-                    </div>
-                    <div class="ou-card ou-card-equal">
-                        <div class="ou-card-title">Equal</div>
-                        <div class="ou-card-value"><span id="ou-equal-pct" class="muted">(0%)</span></div>
-                        <div class="ou-barline">
-                            <div id="ou-equal-fill" class="ou-fill ou-fill-equal" style="width: 0%"></div>
-                        </div>
-                    </div>
-                    <div class="ou-card ou-card-over">
-                        <div class="ou-card-title">Over</div>
-                        <div class="ou-card-value"><span id="ou-over-pct" class="muted">(0%)</span></div>
-                        <div class="ou-barline">
-                            <div id="ou-over-fill" class="ou-fill ou-fill-over" style="width: 0%"></div>
-                        </div>
-                    </div>
-                </div>
+/* ──────────────────────────────────────────
+   PANEL CARD
+────────────────────────────────────────── */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.panel-head {
+  padding: .75rem 1.1rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+}
+.panel-title {
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.panel-body { padding: 1rem 1.1rem; }
 
-                <div class="ou-seq">
-                    <div class="ou-seq-header">
-                        <span>Recent U/= /O</span>
-                        <button id="ou-more" type="button">More</button>
-                    </div>
-                    <div id="ou-seq-chips" class="ou-chips"></div>
-                </div>
-            </div>
+/* ──────────────────────────────────────────
+   DIGIT DISTRIBUTION CIRCLES
+────────────────────────────────────────── */
+.digits-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: .6rem;
+}
+@media (max-width: 480px) {
+  .digits-grid { grid-template-columns: repeat(5, 1fr); gap: .4rem; }
+}
 
-            <div class="separator"></div>
+.digit-item { display: flex; flex-direction: column; align-items: center; gap: .4rem; }
 
-            <div class="md-section">
-                <div class="md-header">
-                    <span>Matches/Differs</span>
-                </div>
-                <div class="md-cards">
-                    <div class="md-card md-card-match">
-                        <div class="md-card-title">Matches</div>
-                        <div class="md-card-value"><span id="md-match-pct" class="muted">(0%)</span></div>
-                        <div class="md-barline">
-                            <div id="md-match-fill" class="md-fill md-fill-match" style="width: 0%"></div>
-                        </div>
-                    </div>
-                    <div class="md-card md-card-differ">
-                        <div class="md-card-title">Differs</div>
-                        <div class="md-card-value"><span id="md-differ-pct" class="muted">(0%)</span></div>
-                        <div class="md-barline">
-                            <div id="md-differ-fill" class="md-fill md-fill-differ" style="width: 0%"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="md-seq">
-                    <div class="md-seq-header">
-                        <span>Recent M/D</span>
-                        <button id="md-more" type="button">More</button>
-                    </div>
-                    <div id="md-seq-chips" class="md-chips"></div>
-                </div>
-            </div>
+/* SVG-ring circle */
+.circle-wrap {
+  position: relative;
+  width: 68px;
+  height: 68px;
+  cursor: pointer;
+  transition: transform var(--transition);
+}
+.circle-wrap:hover { transform: scale(1.08); }
+.circle-svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+.circle-track { fill: none; stroke: var(--surface2); stroke-width: 4; }
+.circle-fill  {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-dasharray: 0 188.5; /* circumference 2π×30 = 188.5 */
+  transition: stroke-dasharray .4s cubic-bezier(.4,0,.2,1), stroke .3s;
+}
+.circle-fill.top      { stroke: var(--accent3); }
+.circle-fill.second   { stroke: var(--accent); filter: opacity(.75); }
+.circle-fill.least    { stroke: var(--accent2); }
+.circle-fill.secondleast { stroke: var(--accent4); filter: opacity(.75); }
+.circle-fill.current  { stroke-width: 5; }
+
+.circle-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.circle-num {
+  font-size: 1.1rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--text);
+}
+.circle-pct {
+  font-family: 'Space Mono', monospace;
+  font-size: .58rem;
+  color: var(--muted);
+  line-height: 1;
+}
+
+/* current ring glow */
+.circle-wrap.current .circle-fill { filter: drop-shadow(0 0 5px var(--accent)); }
+.circle-wrap.current.top .circle-fill { filter: drop-shadow(0 0 5px var(--accent3)); }
+.circle-wrap.current.least .circle-fill { filter: drop-shadow(0 0 5px var(--accent2)); }
+
+/* Legend */
+.legend-row {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: .85rem;
+}
+.legend-item { display: flex; align-items: center; gap: .4rem; font-size: .7rem; color: var(--muted); }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.lg-current  { background: var(--accent);  box-shadow: 0 0 6px var(--accent); }
+.lg-top      { background: var(--accent3); }
+.lg-second   { background: var(--accent); opacity: .6; }
+.lg-least    { background: var(--accent2); }
+.lg-secondleast { background: var(--accent4); }
+
+/* ──────────────────────────────────────────
+   STATS SECTION (Over/Under / Match / E/O)
+────────────────────────────────────────── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.stat-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.stat-head { padding: .65rem 1rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.stat-title { font-size: .68rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.stat-body { padding: .85rem 1rem; display: flex; flex-direction: column; gap: .65rem; }
+
+/* Threshold row */
+.threshold-row { display: flex; align-items: center; gap: .6rem; margin-bottom: .25rem; }
+.threshold-row select { max-width: 80px; }
+
+/* Stat row */
+.stat-row { display: flex; flex-direction: column; gap: .3rem; }
+.stat-row-head { display: flex; justify-content: space-between; align-items: center; }
+.stat-row-label { font-size: .7rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.stat-row-pct { font-family: 'Space Mono', monospace; font-size: .85rem; font-weight: 700; }
+.bar-track { height: 6px; background: var(--surface2); border-radius: 99px; overflow: hidden; }
+.bar-fill  {
+  height: 100%;
+  border-radius: 99px;
+  width: 0;
+  transition: width .5s cubic-bezier(.4,0,.2,1);
+}
+/* colour variants */
+.bar-under   { background: var(--accent); }
+.bar-equal   { background: var(--muted); }
+.bar-over    { background: var(--accent3); }
+.bar-match   { background: var(--accent3); }
+.bar-differ  { background: var(--accent2); }
+.bar-even    { background: var(--accent); }
+.bar-odd     { background: var(--accent4); }
+
+.stat-row-pct.pct-under  { color: var(--accent); }
+.stat-row-pct.pct-equal  { color: var(--muted); }
+.stat-row-pct.pct-over   { color: var(--accent3); }
+.stat-row-pct.pct-match  { color: var(--accent3); }
+.stat-row-pct.pct-differ { color: var(--accent2); }
+.stat-row-pct.pct-even   { color: var(--accent); }
+.stat-row-pct.pct-odd    { color: var(--accent4); }
+
+/* ──────────────────────────────────────────
+   SEQUENCE CHIPS
+────────────────────────────────────────── */
+.seq-wrap { margin-top: .25rem; }
+.seq-label { font-size: .65rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: .4rem; display: flex; align-items: center; justify-content: space-between; }
+.seq-chips { display: flex; flex-wrap: wrap; gap: 3px; }
+.chip {
+  width: 22px; height: 22px;
+  border-radius: var(--chip-r);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Space Mono', monospace;
+  font-size: .6rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  animation: chipIn .15s ease;
+}
+@keyframes chipIn { from { opacity:0; transform:scale(.6); } to { opacity:1; transform:scale(1); } }
+
+.chip.under, .chip.c-under { background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); }
+.chip.equal, .chip.c-equal { background: color-mix(in srgb, var(--muted) 15%, transparent); color: var(--muted);  border: 1px solid color-mix(in srgb, var(--muted) 30%, transparent); }
+.chip.over,  .chip.c-over  { background: color-mix(in srgb, var(--accent3) 15%, transparent); color: var(--accent3); border: 1px solid color-mix(in srgb, var(--accent3) 35%, transparent); }
+.chip.match  { background: color-mix(in srgb, var(--accent3) 15%, transparent); color: var(--accent3); border: 1px solid color-mix(in srgb, var(--accent3) 35%, transparent); }
+.chip.differ { background: color-mix(in srgb, var(--accent2) 15%, transparent); color: var(--accent2); border: 1px solid color-mix(in srgb, var(--accent2) 35%, transparent); }
+.chip.even   { background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent);  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); }
+.chip.odd    { background: color-mix(in srgb, var(--accent4) 15%, transparent); color: var(--accent4); border: 1px solid color-mix(in srgb, var(--accent4) 35%, transparent); }
+
+.more-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--muted);
+  font-family: 'Space Mono', monospace;
+  font-size: .62rem;
+  padding: .15rem .45rem;
+  cursor: pointer;
+  transition: border-color var(--transition), color var(--transition);
+}
+.more-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ──────────────────────────────────────────
+   STREAK ALERT
+────────────────────────────────────────── */
+.streak-bar {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  background: color-mix(in srgb, var(--accent4) 10%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent4) 35%, transparent);
+  border-radius: 8px;
+  padding: .55rem .9rem;
+  font-size: .72rem;
+  color: var(--accent4);
+  font-family: 'Space Mono', monospace;
+  display: none;
+}
+.streak-bar.visible { display: flex; animation: fadeIn .3s ease; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+.streak-icon { font-size: 1rem; }
+
+/* ──────────────────────────────────────────
+   RECONNECT OVERLAY
+────────────────────────────────────────── */
+.conn-toast {
+  position: fixed;
+  bottom: 1.5rem; right: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: .65rem 1rem;
+  font-size: .72rem;
+  color: var(--muted);
+  font-family: 'Space Mono', monospace;
+  display: none;
+  align-items: center;
+  gap: .5rem;
+  box-shadow: 0 8px 32px rgba(0,0,0,.4);
+  z-index: 999;
+}
+.conn-toast.visible { display: flex; animation: fadeIn .3s ease; }
+.conn-spinner {
+  width: 14px; height: 14px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ──────────────────────────────────────────
+   RESPONSIVE
+────────────────────────────────────────── */
+@media (max-width: 520px) {
+  .stats-grid { grid-template-columns: 1fr; }
+  .app-title  { font-size: 1.15rem; }
+  .price-val  { font-size: 1rem; }
+  .ctrl-divider { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="app-wrap">
+
+  <!-- HEADER -->
+  <div class="app-header">
+    <div>
+      <div class="app-title" id="app-title"><span>Xenon</span> Tick Analyser</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:.5rem;">
+      <span class="status-dot" id="status-dot"></span>
+      <span class="status-label" id="status-label">Connecting…</span>
+    </div>
+  </div>
+
+  <!-- CONTROLS -->
+  <div class="controls-bar">
+    <div class="ctrl-group">
+      <div class="ctrl-label">Market</div>
+      <select id="symbols"></select>
+    </div>
+    <div class="ctrl-divider"></div>
+    <div class="ctrl-group" style="max-width:130px;">
+      <div class="ctrl-label">Ticks Window</div>
+      <input type="number" id="ticks-window" value="1000" min="50" max="5000" step="50"/>
+    </div>
+    <div class="ctrl-divider"></div>
+    <div class="price-badge">
+      <div class="price-val" id="price">—</div>
+      <div class="digit-badge">Last digit: <strong id="digit">—</strong></div>
+      <div class="samples-counter" id="samples-count">0/1000</div>
+    </div>
+  </div>
+
+  <!-- STREAK ALERT -->
+  <div class="streak-bar" id="streak-bar">
+    <span class="streak-icon">⚡</span>
+    <span id="streak-msg">Streak detected</span>
+  </div>
+
+  <!-- DIGIT DISTRIBUTION -->
+  <div class="panel">
+    <div class="panel-head">
+      <div class="panel-title" id="digits-title">Last 1000 ticks · digit distribution</div>
+    </div>
+    <div class="panel-body">
+      <div class="digits-grid" id="digits"></div>
+      <div class="legend-row">
+        <div class="legend-item"><div class="legend-dot lg-current"></div><span id="legend-current">Current / most</span></div>
+        <div class="legend-item"><div class="legend-dot lg-top"></div><span>Highest</span></div>
+        <div class="legend-item"><div class="legend-dot lg-least"></div><span id="legend-least">Least frequent</span></div>
+        <div class="legend-item"><div class="legend-dot lg-secondleast"></div><span>2nd least</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATS GRID -->
+  <div class="stats-grid">
+
+    <!-- Over / Under -->
+    <div class="stat-panel">
+      <div class="stat-head">
+        <div class="stat-title">Over / Under</div>
+        <div class="threshold-row">
+          <span class="ctrl-label" style="white-space:nowrap">Digit:</span>
+          <select id="ou-threshold"></select>
         </div>
+      </div>
+      <div class="stat-body">
+        <div class="stat-row">
+          <div class="stat-row-head">
+            <div class="stat-row-label">Under</div>
+            <div class="stat-row-pct pct-under" id="ou-under-pct">0.0%</div>
+          </div>
+          <div class="bar-track"><div class="bar-fill bar-under" id="ou-under-fill"></div></div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-row-head">
+            <div class="stat-row-label">Equal</div>
+            <div class="stat-row-pct pct-equal" id="ou-equal-pct">0.0%</div>
+          </div>
+          <div class="bar-track"><div class="bar-fill bar-equal" id="ou-equal-fill"></div></div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-row-head">
+            <div class="stat-row-label">Over</div>
+            <div class="stat-row-pct pct-over" id="ou-over-pct">0.0%</div>
+          </div>
+          <div class="bar-track"><div class="bar-fill bar-over" id="ou-over-fill"></div></div>
+        </div>
+        <div class="seq-wrap">
+          <div class="seq-label">
+            <span>Recent sequence</span>
+            <button class="more-btn" id="ou-more">More</button>
+          </div>
+          <div class="seq-chips" id="ou-seq-chips"></div>
+        </div>
+      </div>
+    </div>
 
-        <script src="script.js"></script>
-    </body>
+    <!-- Matches / Differs -->
+    <div class="stat-panel">
+      <div class="stat-head">
+        <div class="stat-title">Matches / Differs</div>
+        <div style="font-family:'Space Mono',monospace;font-size:.68rem;color:var(--muted)">vs selected digit</div>
+      </div>
+      <div class="stat-body">
+        <div class="stat-row">
+          <div class="stat-row-head">
+            <div class="stat-row-label">Match</div>
+            <div class="stat-row-pct pct-match" id="md-match-pct">0.0%</div>
+          </div>
+          <div class="bar-track"><div class="bar-fill bar-match" id="md-match-fill"></div></div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-row-head">
+            <div class="stat-row-label">Differ</div>
+            <div class="stat-row-pct pct-differ" id="md-differ-pct">0.0%</div>
+          </div>
+          <div class="bar-track"><div class="bar-fill bar-differ" id="md-differ-fill"></div></div>
+        </div>
+        <div class="seq-wrap">
+          <div class="seq-label">
+            <span>Recent sequence</span>
+            <button class="more-btn" id="md-more">More</button>
+          </div>
+          <div class="seq-chips" id="md-seq-chips"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Even / Odd -->
+    <div class="stat-panel">
+      <div class="stat-head">
+        <div class="stat-title">Even / Odd</div>
+        <div style="font-family:'Space Mono',monospace;font-size:.68rem;color:var(--muted)" id="eo-ratio">—</div>
+      </div>
+      <div class="stat-body">
+        <div class="stat-row">
+          <div class="stat-row-head">
+            <div class="stat-row-label">Even</div>
+            <div class="stat-row-pct pct-even" id="eo-even-pct">0.0%</div>
+          </div>
+          <div class="bar-track"><div class="bar-fill bar-even" id="eo-even-fill"></div></div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-row-head">
+            <div class="stat-row-label">Odd</div>
+            <div class="stat-row-pct pct-odd" id="eo-odd-pct">0.0%</div>
+          </div>
+          <div class="bar-track"><div class="bar-fill bar-odd" id="eo-odd-fill"></div></div>
+        </div>
+        <div class="seq-wrap">
+          <div class="seq-label"><span>Recent sequence</span></div>
+          <div class="seq-chips" id="eo-seq-chips"></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /stats-grid -->
+</div><!-- /app-wrap -->
+
+<!-- Reconnect toast -->
+<div class="conn-toast" id="conn-toast">
+  <div class="conn-spinner"></div>
+  <span id="conn-msg">Reconnecting…</span>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════
+   XENON TICK ANALYSER  ·  Upgraded Engine
+════════════════════════════════════════════════════════ */
+
+const ENDPOINT = 'wss://ws.derivws.com/websockets/v3?app_id=107255';
+const STORAGE_KEY = 'xta.symbol.v1';
+const CIRCUMFERENCE = 2 * Math.PI * 30; // r=30
+
+// ── State ──────────────────────────────────────────────
+let ws            = null;
+let wsRetryDelay  = 1500;
+let currentSymbol = null;
+const symbolMeta  = new Map();
+let currentPipSize= 2;
+let MAX_SAMPLES   = 1000;
+
+// Typed arrays for performance
+let digitsQueue   = new Uint8Array(MAX_SAMPLES); // circular ring buffer
+let queueHead     = 0;   // write pointer
+let queueLen      = 0;   // filled length (≤ MAX_SAMPLES)
+let freq          = new Int32Array(10);
+let lastDigit     = null;
+let lastPrice     = null;
+
+// RAF handle – batch DOM updates
+let rafPending    = false;
+let dirtyFlags    = 0; // bitmask: 1=circles, 2=ou, 4=md, 8=eo
+const DIRTY_CIRCLES = 1, DIRTY_OU = 2, DIRTY_MD = 4, DIRTY_EO = 8, DIRTY_ALL = 15;
+
+// Sequence display counts
+let ouShowCount = 10;
+let mdShowCount = 10;
+const EO_SHOW   = 50;
+
+// ── DOM refs ───────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const symbolsEl     = $('symbols');
+const priceEl       = $('price');
+const digitEl       = $('digit');
+const digitsContainer = $('digits');
+const samplesCountEl= $('samples-count');
+const ticksWindowEl = $('ticks-window');
+const ouThresholdEl = $('ou-threshold');
+const ouUnderPctEl  = $('ou-under-pct');
+const ouEqualPctEl  = $('ou-equal-pct');
+const ouOverPctEl   = $('ou-over-pct');
+const ouUnderFillEl = $('ou-under-fill');
+const ouEqualFillEl = $('ou-equal-fill');
+const ouOverFillEl  = $('ou-over-fill');
+const ouSeqChipsEl  = $('ou-seq-chips');
+const ouMoreBtn     = $('ou-more');
+const mdMatchPctEl  = $('md-match-pct');
+const mdDifferPctEl = $('md-differ-pct');
+const mdMatchFillEl = $('md-match-fill');
+const mdDifferFillEl= $('md-differ-fill');
+const mdSeqChipsEl  = $('md-seq-chips');
+const mdMoreBtn     = $('md-more');
+const eoEvenPctEl   = $('eo-even-pct');
+const eoOddPctEl    = $('eo-odd-pct');
+const eoEvenFillEl  = $('eo-even-fill');
+const eoOddFillEl   = $('eo-odd-fill');
+const eoSeqChipsEl  = $('eo-seq-chips');
+const eoRatioEl     = $('eo-ratio');
+const statusDotEl   = $('status-dot');
+const statusLabelEl = $('status-label');
+const connToastEl   = $('conn-toast');
+const connMsgEl     = $('conn-msg');
+const digitsTitleEl = $('digits-title');
+const streakBarEl   = $('streak-bar');
+const streakMsgEl   = $('streak-msg');
+
+// ── Utility ────────────────────────────────────────────
+function pct(n, d) { return d ? (n / d * 100).toFixed(1) + '%' : '0.0%'; }
+function pctW(n, d) { return d ? (n / d * 100).toFixed(1) + '%' : '0%'; }
+function pctNum(n, d){ return d ? n / d * 100 : 0; }
+
+function toFixed(price, pip) {
+  return Number(price).toFixed(Number.isFinite(pip) ? pip : 2);
+}
+function lastDigitOf(price, pip) {
+  const s = toFixed(price, pip).replace('.','');
+  const d = Number(s.charAt(s.length-1));
+  return Number.isFinite(d) ? d : 0;
+}
+
+// Iterate queue in chronological order
+function forEachDigit(cb) {
+  if (queueLen < MAX_SAMPLES) {
+    for (let i = 0; i < queueLen; i++) cb(digitsQueue[i], i);
+  } else {
+    // ring buffer: oldest is at queueHead
+    for (let i = 0; i < MAX_SAMPLES; i++) {
+      cb(digitsQueue[(queueHead + i) % MAX_SAMPLES], i);
+    }
+  }
+}
+
+// Get the N most recent digits (newest last)
+function recentDigits(n) {
+  const len = Math.min(n, queueLen);
+  const out = new Uint8Array(len);
+  const total = queueLen;
+  // newest is at (queueHead - 1 + MAX_SAMPLES) % MAX_SAMPLES
+  for (let i = 0; i < len; i++) {
+    // i=0 → oldest of the n; i=len-1 → newest
+    const age = len - 1 - i; // 0=newest
+    let idx;
+    if (queueLen < MAX_SAMPLES) {
+      idx = queueLen - 1 - age;
+    } else {
+      idx = ((queueHead - 1 - age) + MAX_SAMPLES * 2) % MAX_SAMPLES;
+    }
+    out[i] = digitsQueue[idx];
+  }
+  return out;
+}
+
+// ── Status helpers ─────────────────────────────────────
+function setStatus(state) {
+  // state: 'connecting' | 'live' | 'error'
+  statusDotEl.className = 'status-dot' + (state === 'live' ? ' live' : state === 'error' ? ' error' : '');
+  statusLabelEl.textContent = state === 'live' ? 'Live' : state === 'error' ? 'Error' : 'Connecting…';
+  if (state === 'connecting') {
+    connToastEl.classList.add('visible');
+    connMsgEl.textContent = 'Reconnecting…';
+  } else {
+    connToastEl.classList.remove('visible');
+  }
+}
+
+// ── Circular ring buffer management ───────────────────
+function resizeBuffer(newMax) {
+  // Extract existing digits in order
+  const old = recentDigits(queueLen);
+  MAX_SAMPLES = newMax;
+  digitsQueue = new Uint8Array(newMax);
+  freq.fill(0);
+  queueHead = 0;
+  queueLen = 0;
+  // Re-push only the most recent newMax values
+  const start = old.length > newMax ? old.length - newMax : 0;
+  for (let i = start; i < old.length; i++) {
+    digitsQueue[queueHead] = old[i];
+    freq[old[i]]++;
+    queueHead = (queueHead + 1) % newMax;
+    queueLen = Math.min(queueLen + 1, newMax);
+  }
+}
+
+function resetBuffer() {
+  digitsQueue = new Uint8Array(MAX_SAMPLES);
+  freq.fill(0);
+  queueHead = 0;
+  queueLen = 0;
+}
+
+function pushDigit(d) {
+  if (queueLen === MAX_SAMPLES) {
+    // Evict oldest
+    const old = digitsQueue[queueHead];
+    freq[old]--;
+  }
+  digitsQueue[queueHead] = d;
+  freq[d]++;
+  queueHead = (queueHead + 1) % MAX_SAMPLES;
+  queueLen = Math.min(queueLen + 1, MAX_SAMPLES);
+}
+
+// ── Streak detection ───────────────────────────────────
+function checkStreak() {
+  if (queueLen < 3) { streakBarEl.classList.remove('visible'); return; }
+  const recent = recentDigits(10);
+  const last = recent[recent.length - 1];
+  let streakLen = 1;
+  for (let i = recent.length - 2; i >= 0; i--) {
+    if (recent[i] === last) streakLen++;
+    else break;
+  }
+  if (streakLen >= 4) {
+    streakMsgEl.textContent = `Digit ${last} appeared ${streakLen}× in a row`;
+    streakBarEl.classList.add('visible');
+  } else {
+    streakBarEl.classList.remove('visible');
+  }
+}
+
+// ── DOM: circle init ───────────────────────────────────
+const circleWraps = [];
+const circleFills = [];
+const circlePcts  = [];
+
+function initDigitUI() {
+  digitsContainer.innerHTML = '';
+  for (let d = 0; d < 10; d++) {
+    const item = document.createElement('div');
+    item.className = 'digit-item';
+
+    // SVG ring
+    const wrap = document.createElement('div');
+    wrap.className = 'circle-wrap';
+    wrap.dataset.d = d;
+    wrap.title = `Click to set O/U digit to ${d}`;
+
+    const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('viewBox','0 0 68 68');
+    svg.setAttribute('width','68');
+    svg.setAttribute('height','68');
+    svg.className = 'circle-svg';
+
+    const track = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    track.setAttribute('cx','34'); track.setAttribute('cy','34'); track.setAttribute('r','30');
+    track.className = 'circle-track';
+
+    const fill = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    fill.setAttribute('cx','34'); fill.setAttribute('cy','34'); fill.setAttribute('r','30');
+    fill.className = 'circle-fill';
+
+    svg.appendChild(track);
+    svg.appendChild(fill);
+    wrap.appendChild(svg);
+
+    const center = document.createElement('div');
+    center.className = 'circle-center';
+    const numEl = document.createElement('div');
+    numEl.className = 'circle-num';
+    numEl.textContent = d;
+    const pctEl = document.createElement('div');
+    pctEl.className = 'circle-pct';
+    pctEl.textContent = '0%';
+    center.appendChild(numEl);
+    center.appendChild(pctEl);
+    wrap.appendChild(center);
+
+    wrap.addEventListener('click', () => {
+      ouThresholdEl.value = String(d);
+      scheduleUpdate(DIRTY_OU | DIRTY_MD);
+    });
+
+    item.appendChild(wrap);
+    digitsContainer.appendChild(item);
+    circleWraps.push(wrap);
+    circleFills.push(fill);
+    circlePcts.push(pctEl);
+  }
+}
+
+// ── Batch render: circles ──────────────────────────────
+function renderCircles() {
+  if (!queueLen) {
+    for (let d = 0; d < 10; d++) {
+      circlePcts[d].textContent = '0%';
+      circleFills[d].style.strokeDasharray = `0 ${CIRCUMFERENCE}`;
+      circleWraps[d].className = 'circle-wrap';
+      circleFills[d].className = 'circle-fill';
+    }
+    samplesCountEl.textContent = `0/${MAX_SAMPLES}`;
+    return;
+  }
+
+  // compute ranks
+  let maxF = 0, secondF = 0, minF = Infinity, secondMinF = Infinity;
+  for (let i = 0; i < 10; i++) {
+    if (freq[i] > maxF) { secondF = maxF; maxF = freq[i]; }
+    else if (freq[i] > secondF) secondF = freq[i];
+    if (freq[i] < minF) { secondMinF = minF; minF = freq[i]; }
+    else if (freq[i] < secondMinF && freq[i] > minF) secondMinF = freq[i];
+  }
+
+  // newest digit
+  const cur = queueLen > 0
+    ? digitsQueue[(queueHead - 1 + MAX_SAMPLES) % MAX_SAMPLES]
+    : null;
+
+  for (let d = 0; d < 10; d++) {
+    const p = pctNum(freq[d], queueLen);
+    const arc = (p / 100) * CIRCUMFERENCE;
+    circleFills[d].style.strokeDasharray = `${arc.toFixed(2)} ${(CIRCUMFERENCE - arc).toFixed(2)}`;
+    circlePcts[d].textContent = p.toFixed(1) + '%';
+
+    const isTop   = freq[d] === maxF && maxF > 0;
+    const isSec   = freq[d] === secondF && secondF > 0 && !isTop;
+    const isLeast = freq[d] === minF;
+    const isSMin  = freq[d] === secondMinF && Number.isFinite(secondMinF) && !isLeast;
+    const isCur   = d === cur;
+
+    // wrap classes
+    let wc = 'circle-wrap';
+    if (isCur)   wc += ' current';
+    if (isTop)   wc += ' top';
+    if (isLeast) wc += ' least';
+    circleWraps[d].className = wc;
+
+    // fill classes
+    let fc = 'circle-fill';
+    if (isTop)   fc += ' top';
+    else if (isSec)  fc += ' second';
+    else if (isLeast) fc += ' least';
+    else if (isSMin)  fc += ' secondleast';
+    if (isCur)   fc += ' current';
+    circleFills[d].className = fc;
+  }
+
+  samplesCountEl.textContent = `${queueLen}/${MAX_SAMPLES}`;
+  digitsTitleEl.textContent = `Last ${MAX_SAMPLES} ticks · digit distribution`;
+}
+
+// ── Batch render: over/under ───────────────────────────
+function renderOverUnder() {
+  const threshold = parseInt(ouThresholdEl.value, 10);
+  if (!Number.isFinite(threshold)) return;
+
+  let under = 0, equal = 0, over = 0;
+  forEachDigit(v => {
+    if (v < threshold) under++;
+    else if (v > threshold) over++;
+    else equal++;
+  });
+
+  const total = Math.max(queueLen, 1);
+  ouUnderPctEl.textContent = pct(under, total);
+  ouEqualPctEl.textContent = pct(equal, total);
+  ouOverPctEl.textContent  = pct(over,  total);
+  ouUnderFillEl.style.width = pctW(under, total);
+  ouEqualFillEl.style.width = pctW(equal, total);
+  ouOverFillEl.style.width  = pctW(over,  total);
+
+  // Chips
+  const n = Math.min(ouShowCount, queueLen);
+  const recent = recentDigits(n);
+  const frag = document.createDocumentFragment();
+  for (let i = 0; i < recent.length; i++) {
+    const v = recent[i];
+    const chip = document.createElement('div');
+    let cls = 'equal', txt = '=';
+    if (v < threshold) { cls = 'under'; txt = 'U'; }
+    else if (v > threshold) { cls = 'over';  txt = 'O'; }
+    chip.className = `chip ${cls}`;
+    chip.textContent = txt;
+    frag.appendChild(chip);
+  }
+  ouSeqChipsEl.replaceChildren(frag);
+}
+
+// ── Batch render: matches/differs ─────────────────────
+function renderMatchesDiffers() {
+  const sel = parseInt(ouThresholdEl.value, 10);
+  if (!Number.isFinite(sel)) return;
+
+  let match = 0, differ = 0;
+  forEachDigit(v => { if (v === sel) match++; else differ++; });
+
+  const total = Math.max(queueLen, 1);
+  mdMatchPctEl.textContent  = pct(match,  total);
+  mdDifferPctEl.textContent = pct(differ, total);
+  mdMatchFillEl.style.width  = pctW(match,  total);
+  mdDifferFillEl.style.width = pctW(differ, total);
+
+  const n = Math.min(mdShowCount, queueLen);
+  const recent = recentDigits(n);
+  const frag = document.createDocumentFragment();
+  for (let i = 0; i < recent.length; i++) {
+    const chip = document.createElement('div');
+    const isM = recent[i] === sel;
+    chip.className = `chip ${isM ? 'match' : 'differ'}`;
+    chip.textContent = isM ? 'M' : 'D';
+    frag.appendChild(chip);
+  }
+  mdSeqChipsEl.replaceChildren(frag);
+}
+
+// ── Batch render: even/odd ─────────────────────────────
+function renderEvenOdd() {
+  let even = 0, odd = 0;
+  forEachDigit(v => { if (v % 2 === 0) even++; else odd++; });
+
+  const total = Math.max(queueLen, 1);
+  eoEvenPctEl.textContent = pct(even, total);
+  eoOddPctEl.textContent  = pct(odd,  total);
+  eoEvenFillEl.style.width = pctW(even, total);
+  eoOddFillEl.style.width  = pctW(odd,  total);
+  if (eoRatioEl) eoRatioEl.textContent = `${even}E / ${odd}O`;
+
+  const n = Math.min(EO_SHOW, queueLen);
+  const recent = recentDigits(n);
+  const frag = document.createDocumentFragment();
+  for (let i = 0; i < recent.length; i++) {
+    const chip = document.createElement('div');
+    const isE = recent[i] % 2 === 0;
+    chip.className = `chip ${isE ? 'even' : 'odd'}`;
+    chip.textContent = isE ? 'E' : 'O';
+    frag.appendChild(chip);
+  }
+  eoSeqChipsEl.replaceChildren(frag);
+}
+
+// ── Scheduled RAF flush ────────────────────────────────
+function scheduleUpdate(flags) {
+  dirtyFlags |= flags;
+  if (rafPending) return;
+  rafPending = true;
+  requestAnimationFrame(flush);
+}
+
+function flush() {
+  rafPending = false;
+  const f = dirtyFlags;
+  dirtyFlags = 0;
+  if (f & DIRTY_CIRCLES) renderCircles();
+  if (f & DIRTY_OU)      renderOverUnder();
+  if (f & DIRTY_MD)      renderMatchesDiffers();
+  if (f & DIRTY_EO)      renderEvenOdd();
+  checkStreak();
+}
+
+// ── WebSocket ──────────────────────────────────────────
+function connect() {
+  setStatus('connecting');
+  ws = new WebSocket(ENDPOINT);
+
+  ws.onopen = () => {
+    wsRetryDelay = 1500;
+    setStatus('live');
+    ws.send(JSON.stringify({ active_symbols: 'brief', product_type: 'basic' }));
+    if (currentSymbol) {
+      requestHistory(currentSymbol);
+      ws.send(JSON.stringify({ ticks: currentSymbol, subscribe: 1 }));
+    }
+  };
+
+  ws.onmessage = e => {
+    let data;
+    try { data = JSON.parse(e.data); } catch { return; }
+
+    if (data.active_symbols) handleSymbols(data.active_symbols);
+    if (data.history)        handleHistory(data.history);
+    if (data.tick)           handleTick(data.tick);
+    if (data.error)          console.warn('Deriv WS error:', data.error);
+  };
+
+  ws.onclose = () => {
+    setStatus('connecting');
+    wsRetryDelay = Math.min(wsRetryDelay * 1.5, 30000);
+    setTimeout(connect, wsRetryDelay);
+  };
+
+  ws.onerror = () => { ws.close(); };
+}
+
+function requestHistory(sym) {
+  ws.send(JSON.stringify({
+    ticks_history: sym,
+    adjust_start_time: 1,
+    count: MAX_SAMPLES,
+    end: 'latest',
+    start: 1,
+    style: 'ticks'
+  }));
+}
+
+function handleSymbols(list) {
+  const vols = list.filter(s =>
+    s.market === 'synthetic_index' && /Volatility/i.test(s.display_name)
+  );
+
+  symbolMeta.clear();
+  vols.forEach(s => {
+    const pip = Number(s.pip ?? s.pip_size ?? 0.01);
+    let dec = 2;
+    if (Number.isFinite(pip)) {
+      const str = String(pip);
+      dec = str.includes('.') ? str.split('.')[1].length : 0;
+    }
+    symbolMeta.set(s.symbol, { decimals: dec });
+  });
+
+  const oneS = vols.filter(s => /(1s)/i.test(s.display_name));
+  const std  = vols.filter(s => !oneS.includes(s));
+
+  symbolsEl.innerHTML = '';
+  const addGroup = (label, items) => {
+    if (!items.length) return;
+    const grp = document.createElement('optgroup');
+    grp.label = label;
+    items.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.symbol;
+      opt.textContent = s.display_name;
+      grp.appendChild(opt);
+    });
+    symbolsEl.appendChild(grp);
+  };
+  addGroup('Volatility (1s)', oneS);
+  addGroup('Volatility', std);
+
+  // Restore saved or default
+  let saved = null;
+  try { saved = localStorage.getItem(STORAGE_KEY); } catch {}
+  const allSyms = vols.map(s => s.symbol);
+  const target = (saved && allSyms.includes(saved)) ? saved : (vols[0]?.symbol ?? null);
+  if (target) subscribe(target);
+}
+
+function handleHistory(history) {
+  if (!history.prices) return;
+  currentPipSize = Number(history.pip_size ?? currentPipSize ?? 2);
+  resetBuffer();
+
+  const meta = symbolMeta.get(currentSymbol);
+  const dec  = meta?.decimals ?? currentPipSize;
+  history.prices.forEach(q => pushDigit(lastDigitOf(q, dec)));
+
+  scheduleUpdate(DIRTY_ALL);
+}
+
+function handleTick(tick) {
+  const { quote, symbol } = tick;
+  if (symbol !== currentSymbol) return;
+  currentPipSize = Number(tick.pip_size ?? currentPipSize ?? 2);
+
+  const meta = symbolMeta.get(currentSymbol);
+  const dec  = meta?.decimals ?? currentPipSize;
+  const d    = lastDigitOf(quote, dec);
+  const fmt  = toFixed(quote, dec);
+
+  // Price colour flash
+  if (lastPrice !== null) {
+    priceEl.classList.toggle('up',   quote > lastPrice);
+    priceEl.classList.toggle('down', quote < lastPrice);
+  }
+  lastPrice = quote;
+
+  priceEl.textContent  = fmt;
+  digitEl.textContent  = String(d);
+  lastDigit            = d;
+
+  pushDigit(d);
+  scheduleUpdate(DIRTY_ALL);
+}
+
+// ── Subscribe ──────────────────────────────────────────
+function subscribe(symbol) {
+  if (!symbol || symbol === currentSymbol) return;
+  currentSymbol = symbol;
+  try { localStorage.setItem(STORAGE_KEY, symbol); } catch {}
+  if (symbolsEl.value !== symbol) symbolsEl.value = symbol;
+
+  resetBuffer();
+  priceEl.textContent = '—';
+  digitEl.textContent = '—';
+  scheduleUpdate(DIRTY_ALL);
+
+  if (ws?.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ forget_all: 'ticks' }));
+    requestHistory(symbol);
+    ws.send(JSON.stringify({ ticks: symbol, subscribe: 1 }));
+  }
+}
+
+// ── Controls ───────────────────────────────────────────
+symbolsEl.addEventListener('change', e => subscribe(e.target.value));
+
+ticksWindowEl.addEventListener('change', () => {
+  let val = parseInt(ticksWindowEl.value, 10);
+  if (!Number.isFinite(val)) val = 1000;
+  val = Math.max(50, Math.min(5000, val));
+  ticksWindowEl.value = val;
+
+  resizeBuffer(val);
+  scheduleUpdate(DIRTY_ALL);
+
+  if (currentSymbol && ws?.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ forget_all: 'ticks' }));
+    requestHistory(currentSymbol);
+    ws.send(JSON.stringify({ ticks: currentSymbol, subscribe: 1 }));
+  }
+});
+
+// Over/Under threshold
+function initOUThreshold() {
+  for (let i = 0; i <= 9; i++) {
+    const opt = document.createElement('option');
+    opt.value = i; opt.textContent = i;
+    ouThresholdEl.appendChild(opt);
+  }
+  ouThresholdEl.value = '5';
+  ouThresholdEl.addEventListener('change', () => scheduleUpdate(DIRTY_OU | DIRTY_MD));
+}
+
+ouMoreBtn?.addEventListener('click', () => {
+  ouShowCount = ouShowCount === 10 ? 50 : 10;
+  ouMoreBtn.textContent = ouShowCount === 10 ? 'More' : 'Less';
+  scheduleUpdate(DIRTY_OU);
+});
+
+mdMoreBtn?.addEventListener('click', () => {
+  mdShowCount = mdShowCount === 10 ? 50 : 10;
+  mdMoreBtn.textContent = mdShowCount === 10 ? 'More' : 'Less';
+  scheduleUpdate(DIRTY_MD);
+});
+
+// ── Theme mirror ───────────────────────────────────────
+(function mirrorTheme() {
+  const root = document.documentElement;
+  const applyDark = v => root.classList.toggle('dark', !!v);
+  const isParentDark = () => {
+    try {
+      const pd = window.parent?.document;
+      if (!pd || pd === document) return null;
+      const pel = pd.documentElement;
+      return pel.classList.contains('dark') || pel.getAttribute('data-theme') === 'dark';
+    } catch { return null; }
+  };
+  const init = isParentDark();
+  if (init === null) applyDark(window.matchMedia('(prefers-color-scheme: dark)').matches);
+  else applyDark(init);
+
+  window.addEventListener('message', e => {
+    if (e.data?.type === 'theme' && 'isDark' in e.data) applyDark(e.data.isDark);
+  });
+  try {
+    const pd = window.parent?.document;
+    if (pd && pd !== document) {
+      const pel = pd.documentElement;
+      new window.parent.MutationObserver(() =>
+        applyDark(pel.classList.contains('dark') || pel.getAttribute('data-theme') === 'dark')
+      ).observe(pel, { attributes: true, attributeFilter: ['class','data-theme'] });
+    }
+  } catch {}
+})();
+
+// ── Boot ───────────────────────────────────────────────
+initDigitUI();
+initOUThreshold();
+scheduleUpdate(DIRTY_ALL);
+connect();
+</script>
+</body>
 </html>
