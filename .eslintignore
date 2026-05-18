@@ -1,0 +1,63 @@
+# Build outputs
+dist/
+dist/*.js
+build/
+out/
+public/
+
+# Compiled or generated test artifacts
+src/**/__tests__/*.js
+
+# Internal libraries or vendored code that should not be linted
+src/_common/lib/**
+src/**/vendor/**
+
+# ESLint and local config files (if you intentionally want to exclude them)
+.eslintrc.js
+.eslintrc.cjs
+rsbuild.config.ts
+
+# Node modules and package manager artifacts
+node_modules/
+.yarn/
+.pnpm-store/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Coverage, caches, logs, and temp files
+coverage/
+.cache/
+.cache-loader/
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor and OS files
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+.DS_Store
+Thumbs.db
+
+# CI, husky and workflow artifacts
+.husky/
+.github/
+.gitattributes
+
+# Environment and secret files
+.env
+.env.*
+.env.local
+.env.*.local
+secrets.json
+
+# Misc build tool caches and outputs
+.next/
+.vercel/
+.vercel_build_output/
+.parcel-cache/
+dist-ssr/
