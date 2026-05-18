@@ -1,0 +1,59 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Enhanced commit-msg hook
+# - Uses commitlint to validate commit messages
+# - Respects SKIP_COMMITLINT=1 to bypass checks (CI or emergency)
+# - Prefer npx, fallback to local node_modules binary
+# - Passes the commit message file explicitly to commitlint
+# - Prints concise, actionable output on failure
+
+COMMIT_MSG_FILE="$1"
+
+# Allow bypassing the hook when explicitly requested
+if [ "x$SKIP_COMMITLINT" = "x1" ] || [ "x$SKIP_COMMIT_LINT" = "x1" ]; then
+  echo "⚠️  Commitlint skipped via SKIP_COMMITLINT"
+  exit 0
+fi
+
+# Resolve commitlint executable: prefer npx, then local node_modules
+run_commitlint() {
+  if command -v npx >/dev/null 2>&1; then
+    npx --no -- commitlint --edit "$COMMIT_MSG_FILE"
+    return $?
+  fi
+
+  if [ -x "./node_modules/.bin/commitlint" ]; then
+    ./node_modules/.bin/commitlint --edit "$COMMIT_MSG_FILE"
+    return $?
+  fi
+
+  echo "❌ commitlint not found. Install commitlint or ensure npx is available."
+  echo "   npm install --save-dev @commitlint/cli @commitlint/config-conventional"
+  return 2
+}
+
+# Run commitlint and capture exit code
+run_commitlint
+STATUS=$?
+
+if [ $STATUS -eq 0 ]; then
+  exit 0
+fi
+
+# Non-zero exit: show helpful guidance
+if [ $STATUS -eq 2 ]; then
+  # missing binary or misconfiguration
+  echo "❌ Commit message validation could not run (commitlint missing)."
+  exit $STATUS
+fi
+
+echo ""
+echo "✖ Commit message failed validation (commitlint)."
+echo "  Follow Conventional Commits: <type>[optional scope]: <description>"
+echo "  Example: feat(auth): add OAuth2 refresh token support"
+echo ""
+echo "  Allowed types: build, bugfix, ci, chore, docs, feat, fix, hotfix, perf, refactor, revert, style, test, redeploy, translations"
+echo ""
+echo "  To bypass temporarily, set SKIP_COMMITLINT=1 and re-run your commit (not recommended)."
+exit $STATUS
