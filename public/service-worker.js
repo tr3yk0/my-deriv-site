@@ -1,7 +1,7 @@
 /* Optimized Service Worker for Free Bots XMLs */
-const CACHE_NAME = 'freebots-cache-v2'; // bump version when releasing updates
+const CACHE_NAME = 'freebots-cache-v3'; // bump version when releasing updates
 
-// Helper to resolve manifest URL
+// Resolve manifest URL dynamically
 const getManifestURL = () => {
   try {
     const url = new URL(self.location);
@@ -17,7 +17,7 @@ const getManifestURL = () => {
 
 const MANIFEST_URL = getManifestURL();
 
-// Install: pre-cache manifest and most popular bots
+// Install: pre-cache manifest + top bots
 self.addEventListener('install', event => {
   self.skipWaiting();
   event.waitUntil(
@@ -56,7 +56,7 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Fetch: stale-while-revalidate for XML and manifest
+// Fetch: stale-while-revalidate for XML + manifest
 self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
@@ -70,7 +70,7 @@ self.addEventListener('fetch', event => {
       const cache = await caches.open(CACHE_NAME);
       const cached = await cache.match(request);
 
-      // Always try to update in background
+      // Always update in background
       event.waitUntil(
         (async () => {
           try {
@@ -94,7 +94,7 @@ self.addEventListener('fetch', event => {
   );
 });
 
-// Optional: background sync for bots cache
+// Background sync for bots cache
 self.addEventListener('sync', event => {
   if (event.tag === 'sync-bots') {
     event.waitUntil(
@@ -110,3 +110,4 @@ self.addEventListener('sync', event => {
     );
   }
 });
+
