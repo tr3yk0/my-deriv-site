@@ -1,0 +1,133 @@
+name: Build Production and deploy to Cloudflare pages
+
+on:
+  push:
+    tags:
+      - production_v*
+
+concurrency:
+  group: cloudflare-pages-build-production
+  cancel-in-progress: true
+
+jobs:
+  build_to_cloudflare_pages:
+    name: Build and deploy to Cloudflare Pages
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20.x
+          cache: 'npm'
+
+      - name: Restore node_modules cache
+        uses: actions/cache@v4
+        id: cache-npm
+        with:
+          path: node_modules
+          key: npm-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            npm-${{ runner.os }}-
+
+      - name: Install dependencies
+        if: ${{ steps.cache-npm.outputs.cache-hit != 'true' }}
+        run: npm ci
+        shell: bash
+
+      - name: Build Production
+        run: npm run build
+        env:
+          APP_ENV: production
+          R2_PROJECT_NAME: ${{ vars.R2_PROJECT_NAME }}
+          TRANSLATIONS_CDN_URL: ${{ vars.TRANSLATIONS_CDN_URL }}
+          CROWDIN_BRANCH_NAME: production
+          IS_GROWTHBOOK_ENABLED: ${{ vars.IS_GROWTHBOOK_ENABLED }}
+          RUDDERSTACK_KEY: ${{ vars.RUDDERSTACK_KEY }}
+          REMOTE_CONFIG_URL: ${{ vars.REMOTE_CONFIG_URL }}
+          GROWTHBOOK_CLIENT_KEY: ${{ vars.GROWTHBOOK_CLIENT_KEY }}
+          GROWTHBOOK_DECRYPTION_KEY: ${{ vars.GROWTHBOOK_DECRYPTION_KEY }}
+          GD_API_KEY: ${{ secrets.GD_API_KEY }}
+          GD_APP_ID: ${{ secrets.GD_APP_ID }}
+          GD_CLIENT_ID: ${{ secrets.GD_CLIENT_ID }}
+          TRACKJS_TOKEN: ${{ secrets.TRACKJS_TOKEN }}
+          DATADOG_APPLICATION_ID: ${{ secrets.DATADOG_APPLICATION_ID }}
+          DATADOG_CLIENT_TOKEN: ${{ secrets.DATADOG_CLIENT_TOKEN }}
+          DATADOG_SESSION_REPLAY_SAMPLE_RATE: ${{ vars.DATADOG_SESSION_REPLAY_SAMPLE_RATE }}
+          DATADOG_SESSION_SAMPLE_RATE: ${{ vars.DATADOG_SESSION_SAMPLE_RATE }}
+          REF_NAME: ${{ github.ref_name }}
+
+      - name: Run ESLint
+        run: npm run test:lint
+
+      - name: Run unit tests and coverage
+        run: npm run test
+
+      - name: Install Wrangler CLI
+        run: |
+          echo "Installing Wrangler CLI"
+          npm i -g wrangler@3
+        shell: bash
+
+      - name: Publish to Cloudflare Pages
+        id: publish-to-pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_PROJECT_NAME: ${{ vars.CLOUDFLARE_PROJECT_NAME }}
+        run: |
+          set -euo pipefail
+
+          echo "Deploying build to Cloudflare Pages (wrangler pages deploy)"
+          directory='dist/'
+          projectName="${CLOUDFLARE_PROJECT_NAME:-}"
+          branch="main"
+
+          if [ -z "$projectName" ]; then
+            echo "CLOUDFLARE_PROJECT_NAME is not set. Aborting deploy."
+            exit 1
+          fi
+
+          # Run deploy and capture output
+          LOG_FILE=".github/wrangler-pages-deploy.log"
+          mkdir -p "$(dirname "$LOG_FILE")"
+          echo "Starting wrangler pages deploy for project: $projectName (directory: $directory, branch: $branch)" > "$LOG_FILE"
+
+          # Use wrangler to deploy; capture stdout/stderr
+          if wrangler pages deploy "$directory" --project-name="$projectName" --branch="$branch" >> "$LOG_FILE" 2>&1; then
+            echo "Deployment command finished. Inspecting logs for success..."
+          else
+            echo "Wrangler command failed. See $LOG_FILE for details."
+            cat "$LOG_FILE"
+            exit 1
+          fi
+
+          # Attempt to extract preview URL from wrangler output or construct canonical preview URL
+          # Wrangler typically prints the URL; fallback to predictable pages.dev URL
+          PREVIEW_URL=$(grep -Eo 'https?://[a-zA-Z0-9._-]+\\.pages\\.dev' "$LOG_FILE" | head -n 1 || true)
+          if [ -z "$PREVIEW_URL" ]; then
+            PREVIEW_URL="https://$branch.$projectName.pages.dev"
+          fi
+
+          echo "preview_url=$PREVIEW_URL" >> "$GITHUB_OUTPUT"
+          echo "Wrangler deploy log:"
+          cat "$LOG_FILE"
+
+      - name: Upload to Vercel
+        uses: 'deriv-com/shared-actions/.github/actions/vercel_DR_publish@master'
+        with:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_API_TOKEN }}
+          ENVIRONMENT: Production
+          VERCEL_SCOPE: deriv
+          ALIAS_DOMAIN_URL: 'dbot-dr.binary.sx'
