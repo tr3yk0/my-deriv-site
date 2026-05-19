@@ -1,21 +1,22 @@
 import { standalone_routes } from '@/components/shared';
-import { LegacyAccountLimitsIcon } from '@deriv/quill-icons/Legacy';
+import { LegacyHelpCentreIcon } from '@deriv/quill-icons/Legacy';
 import { useTranslations } from '@deriv-com/translations';
 import { Tooltip } from '@deriv-com/ui';
 
-const AccountLimits = () => {
+const HelpCentre = () => {
     const { localize } = useTranslations();
 
     return (
         <Tooltip
             as='a'
             className='app-footer__icon'
-            href={standalone_routes.account_limits}
-            tooltipContent={localize('Account limits')}
+            href={standalone_routes.help_center}
+            target='_blank'
+            tooltipContent={localize('Help centre')}
         >
-            <LegacyAccountLimitsIcon iconSize='xs' fill='var(--text-general)' />
+            <LegacyHelpCentreIcon iconSize='xs' />
         </Tooltip>
     );
 };
 
-export default AccountLimits;
+export default HelpCentre;
